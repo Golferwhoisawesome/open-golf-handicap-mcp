@@ -22,8 +22,7 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-      # neverthrow wrongly lists a Linux rollup binary as optional; never bundle it.
-      - run: npm ci --ignore-scripts --omit=optional
+      - run: npm ci --ignore-scripts
       - name: Tag matches package version
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
       - run: npm publish --provenance --access public

@@ -52,3 +52,18 @@ for (const entry of await readdir(directory)) {
 console.log(
   "Prepared unchanged SpicyGolf 0.20.1 runtime with tested Zod 4.6.7 dependency metadata.",
 );
+
+// neverthrow lists a native Rollup binary as an optional dependency although it
+// never loads it. On Linux npm installs it, and it would be bundled into the
+// package. Remove it before packing; nothing in the runtime requires it.
+for (const entry of await readdir(
+  fileURLToPath(new URL("../node_modules/@rollup/", import.meta.url)),
+).catch(() => [])) {
+  if (/^rollup-[a-z0-9-]+$/.test(entry))
+    await rm(
+      fileURLToPath(
+        new URL(`../node_modules/@rollup/${entry}`, import.meta.url),
+      ),
+      { recursive: true, force: true },
+    );
+}
