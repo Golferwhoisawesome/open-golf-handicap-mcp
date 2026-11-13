@@ -85,6 +85,8 @@ export async function hasPrivateAcl(directory: string): Promise<boolean> {
     const dacl = sddl.match(/D:([A-Z]*)((?:\([^)]*\))+)/);
     if (!dacl || !dacl[1]!.includes("P")) return false;
     const sid = await userSid();
+    // SDDL abbreviates the built-in Administrator account (RID 500) as "LA".
+    const self = new Set([sid, ...(/-500$/.test(sid) ? ["LA"] : [])]);
     const entries = [...dacl[2]!.matchAll(/\(([^)]*)\)/g)].map((match) =>
       match[1]!.split(";"),
     );
@@ -94,9 +96,9 @@ export async function hasPrivateAcl(directory: string): Promise<boolean> {
         ([type, flags = "", , , , trustee = ""]) =>
           type === "A" &&
           !flags.includes("ID") &&
-          (trustee === sid || TRUSTED_ALIASES.has(trustee)),
+          (self.has(trustee) || TRUSTED_ALIASES.has(trustee)),
       ) &&
-      entries.some(([, , , , , trustee]) => trustee === sid);
+      entries.some(([, , , , , trustee = ""]) => self.has(trustee));
     if (ok) verifiedDirectories.add(key);
     return ok;
   } catch {
