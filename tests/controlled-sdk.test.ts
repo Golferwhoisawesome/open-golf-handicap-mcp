@@ -317,20 +317,25 @@ test("controlled malformed, oversized and failed transports terminate without le
   }
 });
 
-test("controlled expiry terminates the actual worker and rejects later requests", async () => {
-  const session = new SpicyGolfSdkSession({
-    mode: "offline-test",
-    controlledTest: true,
-    maxSessionMs: 6000,
-  });
-  try {
-    const { expiresAt } = await connect(session);
-    await delay(Math.max(0, expiresAt - Date.now()) + 100);
-    await assertStopped(session, 1);
-  } finally {
-    await session.close();
-  }
-});
+test(
+  "controlled expiry terminates the actual worker and rejects later requests",
+  { timeout: 40_000 },
+  async () => {
+    const session = new SpicyGolfSdkSession({
+      mode: "offline-test",
+      controlledTest: true,
+      // Three paced requests plus slow CI worker startup must fit.
+      maxSessionMs: 12_000,
+    });
+    try {
+      const { expiresAt } = await connect(session);
+      await delay(Math.max(0, expiresAt - Date.now()) + 100);
+      await assertStopped(session, 1);
+    } finally {
+      await session.close();
+    }
+  },
+);
 
 test("installed SDK accepts Archived rows, selects the home club and safely maps a multi-club golfer", async () => {
   const session = controlled("archived-multi-club");
