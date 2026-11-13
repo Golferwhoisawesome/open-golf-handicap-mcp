@@ -12,6 +12,14 @@
     "ai"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Golferwhoisawesome/open-golf-handicap-mcp.git"
+  },
+  "homepage": "https://github.com/Golferwhoisawesome/open-golf-handicap-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Golferwhoisawesome/open-golf-handicap-mcp/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22"
