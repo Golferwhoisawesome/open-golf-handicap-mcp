@@ -1,0 +1,68 @@
+{
+  "name": "open-golf-handicap-mcp",
+  "version": "0.1.0",
+  "description": "Unofficial MCP server for GHIN golf handicap lookups with your own GHIN sign-in, plus a private encrypted roster. Not affiliated with the USGA or GHIN.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "golf",
+    "handicap",
+    "ghin",
+    "claude",
+    "ai"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "open-golf-handicap-mcp": "dist/server/stdio.js",
+    "open-golf-handicap-setup": "dist/desktop/setup-cli.js"
+  },
+  "files": [
+    "dist",
+    "docs/security-model.md",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepack": "node scripts/prepare-spicygolf.mjs && node scripts/clean-dist.mjs && npm run build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test tests/*.test.ts",
+    "test:package": "node scripts/package-smoke.mjs",
+    "test:desktop-client": "node scripts/package-smoke.mjs --codex-client",
+    "check": "npm run typecheck && npm test && npm run build",
+    "start": "node dist/server/http.js",
+    "start:stdio": "node dist/server/stdio.js",
+    "dev": "tsx src/server/http.ts",
+    "format": "prettier --write src tests scripts docs examples *.md *.json",
+    "format:check": "prettier --check src tests scripts docs examples *.md *.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@spicygolf/ghin": "0.20.1",
+    "express": "5.1.0",
+    "jose": "6.1.3",
+    "zod": "4.6.7"
+  },
+  "overrides": {
+    "@spicygolf/ghin": {
+      "zod": "4.6.7"
+    }
+  },
+  "bundledDependencies": [
+    "@spicygolf/ghin"
+  ],
+  "devDependencies": {
+    "@types/express": "5.0.3",
+    "@types/node": "22.19.1",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}

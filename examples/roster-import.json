@@ -1,0 +1,18 @@
+{
+  "golfers": [
+    {
+      "name": "Demo Alex",
+      "ghinNumber": "900000001",
+      "nickname": "Alex"
+    },
+    {
+      "name": "Demo Blair",
+      "ghinNumber": "900000002"
+    },
+    {
+      "name": "Demo Casey",
+      "ghinNumber": "900000003"
+    }
+  ],
+  "confirmed": false
+}
