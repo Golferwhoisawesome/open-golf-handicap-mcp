@@ -192,6 +192,25 @@ try {
       await realpath(entrypoint),
     );
   }
+  // Both commands must actually run when launched through npm's bin links.
+  for (const [bin, expected] of [
+    [packageName, "open-golf-handicap-mcp ["],
+    ["open-golf-handicap-setup", "open-golf-handicap-setup <init"],
+  ]) {
+    const shim = join(
+      installDir,
+      "node_modules",
+      ".bin",
+      process.platform === "win32" ? `${bin}.cmd` : bin,
+    );
+    const help = await run(shim, ["--help"], {
+      cwd: installDir,
+      env,
+      timeout: 30_000,
+      shell: process.platform === "win32",
+    });
+    assert(help.stdout.includes(expected), `${bin} --help did not run`);
+  }
   for (const developmentDependency of ["typescript", "tsx"]) {
     await assert.rejects(
       access(join(installDir, "node_modules", developmentDependency)),

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { initProfile, inspectProfile, unlockProfile } from "./profile.js";
 import { readHiddenPassphrase } from "./private-prompt.js";
@@ -100,10 +101,20 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     passphrase.fill(0);
   }
 }
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
-) {
+// npm runs bins through a symlink (or a .cmd shim on Windows), so compare
+// the real path of the invoked script with this module's real path.
+function invokedDirectly(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return (
+      pathToFileURL(realpathSync(resolve(process.argv[1]))).href ===
+      pathToFileURL(realpathSync(new URL(import.meta.url))).href
+    );
+  } catch {
+    return false;
+  }
+}
+if (invokedDirectly()) {
   main().catch((error: unknown) => {
     const diagnostic =
       error instanceof AppError ? safeError(error) : publicDesktopError(error);
