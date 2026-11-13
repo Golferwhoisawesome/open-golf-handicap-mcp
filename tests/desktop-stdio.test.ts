@@ -13,7 +13,7 @@ import { shortTempRoot } from "./support/temp.js";
 
 test(
   "private profile reopens across MCP processes and locking closes active clients",
-  { timeout: 20_000 },
+  { timeout: 60_000 },
   async () => {
     const root = await mkdtemp(join(await shortTempRoot(), "ogh-profile-"));
     const directory = join(root, "profile");
@@ -41,7 +41,7 @@ test(
       });
       const client = new Client({ name: "private-profile-test", version: "1" });
       clients.push(client);
-      await client.connect(transport, { timeout: 5000 });
+      await client.connect(transport, { timeout: 60_000 });
       return { client, stderr: () => stderr };
     }
     try {

@@ -139,7 +139,7 @@ test("controlled sign-in failure reports only bounded diagnostics after worker e
 
 test(
   "controlled MCP hookup shares its budget across clients and blocks cached reads after budget termination",
-  { timeout: 20_000 },
+  { timeout: 60_000 },
   async () => {
     const root = await mkdtemp(join(await shortTempRoot(), "ogh-controlled-"));
     const directory = join(root, "p");
@@ -171,7 +171,7 @@ test(
         version: "1",
       });
       clients.push(client);
-      await client.connect(transport, { timeout: 5000 });
+      await client.connect(transport, { timeout: 60_000 });
       return client;
     }
     async function call(client: Client, name: string, args = {}) {

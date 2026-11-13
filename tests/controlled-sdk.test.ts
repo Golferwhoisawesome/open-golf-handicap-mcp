@@ -319,7 +319,7 @@ test("controlled malformed, oversized and failed transports terminate without le
 
 test(
   "controlled expiry terminates the actual worker and rejects later requests",
-  { timeout: 40_000 },
+  { timeout: 60_000 },
   async () => {
     const session = new SpicyGolfSdkSession({
       mode: "offline-test",

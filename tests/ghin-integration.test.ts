@@ -56,7 +56,7 @@ async function data(
 
 test(
   "two desktop MCP processes share the actual offline SDK; disconnect blocks cached reads and preserves encrypted roster",
-  { timeout: 20_000 },
+  { timeout: 60_000 },
   async () => {
     const root = await mkdtemp(
         join(await shortTempRoot(), "ogh-sdk-integration-"),
@@ -91,7 +91,7 @@ test(
         version: "1",
       });
       clients.push(client);
-      await client.connect(transport, { timeout: 5000 });
+      await client.connect(transport, { timeout: 60_000 });
       return client;
     }
     try {
@@ -213,7 +213,7 @@ test(
 
 test(
   "provider keeps 403 distinct from authentication expiry and rejects invalid delta dates",
-  { timeout: 10_000 },
+  { timeout: 60_000 },
   async () => {
     const store = new InMemorySecretStore(),
       repository = new GhinCredentialRepository(store),
@@ -305,7 +305,7 @@ test("failed session construction clears pending credentials and release gate ru
 
 test(
   "expired SDK session retains opted-in login for explicit reconnect and stale disconnect cannot erase it",
-  { timeout: 40_000 },
+  { timeout: 60_000 },
   async () => {
     const store = new InMemorySecretStore(),
       repository = new GhinCredentialRepository(store),

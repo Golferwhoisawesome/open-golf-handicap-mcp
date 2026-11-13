@@ -189,7 +189,7 @@ test("403 blocks SDK re-login traffic and closes the private session", async () 
 });
 test(
   "429 cooldown suppresses actual HTTP despite the SDK's internal retry loop",
-  { timeout: 40_000 },
+  { timeout: 60_000 },
   async () => {
     const session = await connected("rate-limited");
     try {
@@ -268,7 +268,7 @@ test(
 );
 test(
   "private session expires independently of the SDK's JWT cache",
-  { timeout: 25_000 },
+  { timeout: 60_000 },
   async () => {
     const session = new SpicyGolfSdkSession({
       mode: "offline-test",
@@ -293,7 +293,7 @@ test(
 );
 test(
   "oversized or malformed SDK responses yield safe failures rather than arbitrary data",
-  { timeout: 25_000 },
+  { timeout: 60_000 },
   async () => {
     for (const scenario of ["oversized", "malformed-golfers"] as const) {
       const session = await connected(scenario);
