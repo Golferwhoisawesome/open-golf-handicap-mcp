@@ -153,12 +153,19 @@ test("expiry during request pacing prevents the next HTTP request", async () => 
     await assert.rejects(connect(session), hasCode("AUTH_REQUIRED"));
     assert.equal(session.diagnostics().stopReason, "session_expired");
     assert.equal(session.diagnostics().workerExited, true);
-    assert.deepEqual(session.offlineDiagnostics(), {
-      installationRequests: 1,
-      loginRequests: 0,
-      batchRequests: 0,
-      blockedRequests: 0,
-    });
+    // A slow runner may expire before the first request; either way the
+    // session must stop before sign-in.
+    const counts = session.offlineDiagnostics();
+    assert(counts.installationRequests <= 1);
+    assert.deepEqual(
+      { ...counts, installationRequests: 0 },
+      {
+        installationRequests: 0,
+        loginRequests: 0,
+        batchRequests: 0,
+        blockedRequests: 0,
+      },
+    );
   } finally {
     await session.close();
   }

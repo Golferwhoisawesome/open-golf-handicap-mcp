@@ -9,6 +9,13 @@ import { promisify } from "node:util";
 const run = promisify(execFile);
 export const isWindows = process.platform === "win32";
 
+/** Absolute System32 tools: PATH may resolve `whoami` or `icacls` to
+ * look-alikes from Git Bash, MSYS2 or Cygwin, or to a planted binary. */
+function systemTool(name: "whoami.exe" | "icacls.exe"): string {
+  const root = process.env.SystemRoot ?? process.env.windir ?? "C:\\Windows";
+  return join(root, "System32", name);
+}
+
 /** POSIX: owner-only permission bits and the current uid.
  * Windows: permission bits are not meaningful; directory ACLs are checked
  * separately and files inherit the protected directory ACL. */
@@ -23,9 +30,13 @@ export function hasPrivateMode(info: Stats, mode: 0o700 | 0o600): boolean {
 
 let currentUserSid: Promise<string> | undefined;
 async function userSid(): Promise<string> {
-  currentUserSid ??= run("whoami", ["/user", "/fo", "csv", "/nh"], {
-    windowsHide: true,
-  }).then(({ stdout }) => {
+  currentUserSid ??= run(
+    systemTool("whoami.exe"),
+    ["/user", "/fo", "csv", "/nh"],
+    {
+      windowsHide: true,
+    },
+  ).then(({ stdout }) => {
     const sid = stdout.trim().match(/"(S-1-[0-9-]+)"\s*$/)?.[1];
     if (!sid) throw new Error("Current user SID unavailable");
     return sid;
@@ -42,7 +53,7 @@ export async function restrictDirectoryAcl(directory: string): Promise<void> {
   if (!isWindows) return;
   const sid = await userSid();
   await run(
-    "icacls",
+    systemTool("icacls.exe"),
     [
       directory,
       "/inheritance:r",
@@ -66,7 +77,9 @@ export async function hasPrivateAcl(directory: string): Promise<boolean> {
   const scratch = await mkdtemp(join(tmpdir(), "ogh-acl-"));
   try {
     const output = join(scratch, "acl.txt");
-    await run("icacls", [directory, "/save", output], { windowsHide: true });
+    await run(systemTool("icacls.exe"), [directory, "/save", output], {
+      windowsHide: true,
+    });
     const saved = (await readFile(output)).toString("utf16le");
     const sddl = saved.split(/\r?\n/)[1]?.trim() ?? "";
     const dacl = sddl.match(/D:([A-Z]*)((?:\([^)]*\))+)/);
