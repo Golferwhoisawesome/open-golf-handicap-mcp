@@ -80,3 +80,37 @@ test(
     await rm(root, { recursive: true, force: true });
   },
 );
+
+test(
+  "diagnostic: raw ACL format on this runner",
+  { skip: windowsOnly },
+  async () => {
+    const { execFile } = await import("node:child_process");
+    const { promisify } = await import("node:util");
+    const run = promisify(execFile);
+    const sys = join(process.env.SystemRoot ?? "C:\\Windows", "System32");
+    const root = await mkdtemp(join(await shortTempRoot(), "ogh-diag-"));
+    try {
+      const dir = join(root, "d");
+      await mkdir(dir);
+      await restrictDirectoryAcl(dir);
+      const who = await run(join(sys, "whoami.exe"), [
+        "/user",
+        "/fo",
+        "csv",
+        "/nh",
+      ]);
+      console.log("DIAG whoami:", JSON.stringify(who.stdout));
+      const out = join(root, "acl.txt");
+      await run(join(sys, "icacls.exe"), [dir, "/save", out]);
+      const raw = await readFile(out);
+      console.log("DIAG bytes:", raw.subarray(0, 8).toString("hex"));
+      console.log("DIAG utf16le:", JSON.stringify(raw.toString("utf16le")));
+      console.log("DIAG utf8:", JSON.stringify(raw.toString("utf8")));
+      const shown = await run(join(sys, "icacls.exe"), [dir]);
+      console.log("DIAG icacls:", JSON.stringify(shown.stdout));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);

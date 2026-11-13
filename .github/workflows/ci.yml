@@ -25,7 +25,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci --ignore-scripts
+      # neverthrow wrongly lists a Linux rollup binary as optional; never bundle it.
+      - run: npm ci --ignore-scripts --omit=optional
       - run: npm run check
       - run: npm run test:package
       - run: npm run format:check
