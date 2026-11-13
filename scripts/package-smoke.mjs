@@ -79,7 +79,12 @@ try {
     await readFile(join(root, "package.json"), "utf8"),
   );
   const tarball = join(temporary, `${packageName}-${metadata.version}.tgz`);
-  const listing = await run("tar", ["-tzf", tarball]);
+  // Git Bash's GNU tar reads "C:" as a remote host; use Windows' bsdtar.
+  const tar =
+    process.platform === "win32"
+      ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe")
+      : "tar";
+  const listing = await run(tar, ["-tzf", tarball]);
   const entries = listing.stdout.trim().split("\n");
   const bundledRoots = new Set([
     "@spicygolf/ghin",
