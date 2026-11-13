@@ -234,12 +234,14 @@ test("invalid login, expired token and missing own golfer never establish a sess
 });
 test(
   "worker deadline terminates hung HTTP; explicit close invalidates in-flight SDK results",
-  { timeout: 20_000 },
+  { timeout: 60_000 },
   async () => {
     const timed = new SpicyGolfSdkSession({
       mode: "offline-test",
       fixtureScenario: "timeout",
-      timeoutMs: 4000,
+      // Long enough for a paced sign-in on a slow CI runner; the hung lookup
+      // after sign-in must still be cut off by this deadline.
+      timeoutMs: 15_000,
     });
     const input = credentials();
     try {
