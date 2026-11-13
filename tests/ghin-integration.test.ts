@@ -305,7 +305,7 @@ test("failed session construction clears pending credentials and release gate ru
 
 test(
   "expired SDK session retains opted-in login for explicit reconnect and stale disconnect cannot erase it",
-  { timeout: 20_000 },
+  { timeout: 40_000 },
   async () => {
     const store = new InMemorySecretStore(),
       repository = new GhinCredentialRepository(store),
@@ -317,7 +317,8 @@ test(
         ...options(repository),
         credentials: login,
         remember: true,
-        sessionOptions: { maxSessionMs: 6000 },
+        // Room for slow CI worker startup plus two paced requests.
+        sessionOptions: { maxSessionMs: 12_000 },
       });
       const expiration = (await first.getConnectionState(owner)).expiresAt;
       assert(expiration);

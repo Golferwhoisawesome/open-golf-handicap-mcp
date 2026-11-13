@@ -85,7 +85,7 @@ try {
       ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe")
       : "tar";
   const listing = await run(tar, ["-tzf", tarball]);
-  const entries = listing.stdout.trim().split("\n");
+  const entries = listing.stdout.trim().split(/\r?\n/);
   const bundledRoots = new Set([
     "@spicygolf/ghin",
     "async-mutex",
