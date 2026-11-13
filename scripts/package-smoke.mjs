@@ -57,7 +57,8 @@ try {
       env,
       // Node refuses to launch .cmd shims without a shell.
       shell: command === "npm.cmd",
-      timeout: 120_000,
+      // Installing ~6,000 bundled files is slow on Windows CI runners.
+      timeout: 300_000,
       maxBuffer: 2_000_000,
     });
   };
