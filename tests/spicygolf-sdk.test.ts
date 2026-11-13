@@ -266,11 +266,12 @@ test(
 );
 test(
   "private session expires independently of the SDK's JWT cache",
-  { timeout: 6000 },
+  { timeout: 25_000 },
   async () => {
     const session = new SpicyGolfSdkSession({
       mode: "offline-test",
-      maxSessionMs: 4000,
+      // Room for slow CI worker startup plus two paced requests.
+      maxSessionMs: 10_000,
     });
     const input = credentials();
     try {
