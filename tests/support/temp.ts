@@ -24,3 +24,11 @@ export async function privateDirectory(path: string): Promise<void> {
 export async function modeOf(path: string, expected: number): Promise<number> {
   return posix ? (await stat(path)).mode & 0o777 : expected;
 }
+
+import { mkdtemp } from "node:fs/promises";
+/** mkdtemp is owner-only on POSIX; on Windows apply the same protected ACL. */
+export async function privateTemp(prefix: string): Promise<string> {
+  const directory = await mkdtemp(prefix);
+  await restrictDirectoryAcl(directory);
+  return directory;
+}

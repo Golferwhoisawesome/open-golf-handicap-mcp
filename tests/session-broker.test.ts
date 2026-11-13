@@ -25,11 +25,12 @@ import {
   privateDirectory,
   posix,
   posixOnly,
+  privateTemp,
 } from "./support/temp.js";
 
 test("pending disconnect reports persistence success or failure before sign-in shutdown closes its socket", async () => {
   for (const fail of [false, true]) {
-    const directory = await mkdtemp(
+    const directory = await privateTemp(
       join(await shortTempRoot(), "ogh-disconnect-"),
     );
     const key = randomBytes(32),

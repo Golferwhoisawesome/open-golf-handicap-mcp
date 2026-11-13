@@ -20,7 +20,7 @@ import { MockRosterStorage } from "../src/storage/mock-roster-storage.js";
 import { LocalRosterStorage } from "../src/storage/local-roster-storage.js";
 import { GoogleDriveRosterStorage } from "../src/storage/google-drive-roster-storage.js";
 import type { Roster, SavedGolfer } from "../src/domain/models.js";
-import { modeOf, posixOnly } from "./support/temp.js";
+import { modeOf, posixOnly, privateTemp } from "./support/temp.js";
 const golfer = (): SavedGolfer => ({
   id: "demo",
   name: "Synthetic Only Golfer",
@@ -36,7 +36,7 @@ const golfer = (): SavedGolfer => ({
 const errorCode = (code: string) => (error: unknown) =>
   (error as { code?: string })?.code === code;
 async function fixture() {
-  const directory = await mkdtemp(
+  const directory = await privateTemp(
       join(await realpath(tmpdir()), "oghmcp-storage-"),
     ),
     key = randomBytes(32);
