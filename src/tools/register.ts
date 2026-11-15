@@ -92,14 +92,19 @@ export function createMcpServer(service: RosterService, principal: Principal) {
   }
   tool(
     "get_golfer_handicap",
-    "Retrieve one provider Handicap Index by GHIN number, with source and synthetic provenance. Unknown or unavailable golfers return errors. Force still obeys request limits.",
-    z.object({ ghinNumber: ghinSchema, forceRefresh: force }).strict(),
+    "Retrieve one Handicap Index by GHIN number, with source and synthetic provenance. Omit ghinNumber to look up the signed-in user's own handicap (for \"what's my handicap\"). Unknown or unavailable golfers return errors. Force still obeys request limits.",
+    z
+      .object({ ghinNumber: ghinSchema.optional(), forceRefresh: force })
+      .strict(),
     z.object({ result: lookupSchema }),
     false,
-    async (a) => ({
-      result: (await service.lookup(principal, [a.ghinNumber], a.forceRefresh))
-        .results[0],
-    }),
+    async (a) => {
+      const number = a.ghinNumber ?? (await service.ownNumber(principal));
+      return {
+        result: (await service.lookup(principal, [number], a.forceRefresh))
+          .results[0],
+      };
+    },
   );
   tool(
     "get_multiple_handicaps",

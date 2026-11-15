@@ -194,6 +194,19 @@ export class RosterService {
     this.connected(p);
     return { results: await this.lookups.getMany(p.subject, numbers, force) };
   }
+  /** The signed-in golfer's own GHIN number, when the provider knows it. */
+  async ownNumber(p: Principal): Promise<string> {
+    this.connected(p);
+    const state = await this.lookups.provider.getConnectionState?.({
+      subject: p.subject,
+    });
+    if (!state?.ownGhinNumber)
+      throw new AppError(
+        "INVALID_INPUT",
+        "Your own GHIN number is not known here; ask the user for it.",
+      );
+    return state.ownGhinNumber;
+  }
   async history(p: Principal, number: string, limit: number) {
     this.connected(p);
     if (!this.lookups.provider.capabilities.history)

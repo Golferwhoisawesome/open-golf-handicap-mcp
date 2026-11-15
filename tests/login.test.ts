@@ -322,6 +322,12 @@ test(
         assert.equal(lookup.data.result.ok, true);
         assert.equal(lookup.data.result.data.handicapIndex, 8.7);
         assert.equal(lookup.data.result.data.synthetic, true);
+        const mine = await call(first, "get_golfer_handicap", {});
+        assert.equal(mine.ok, true, "no number means the user's own");
+        assert.equal(mine.data.result.data.ghinNumber, "900000001");
+        assert.equal(mine.data.result.data.handicapIndex, 12.4);
+        const statusNumber = await call(first, "get_connection_status");
+        assert.equal(statusNumber.data.yourGhinNumber, "900000001");
         const saved = await call(first, "save_golfer", {
           name: "Synthetic Golfer",
           ghinNumber: "900000002",
