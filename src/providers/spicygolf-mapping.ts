@@ -4,6 +4,7 @@ import {
   type LookupResult,
   type PublicError,
 } from "../domain/models.js";
+import type { GolferMatch } from "./handicap-provider.js";
 
 export interface SpicyGolfMappingOptions {
   source: string;
@@ -152,6 +153,57 @@ export function normalizeSpicyGolfRow(
 }
 
 /** Never pass library messages, raw responses, causes, URLs or secrets through. */
+const shortText = (value: unknown): string | undefined =>
+  typeof value === "string" &&
+  value.trim().length > 0 &&
+  value.length <= 120 &&
+  !/[\u0000-\u001f\u007f]/.test(value)
+    ? value.trim()
+    : undefined;
+
+/** Name-search rows reduced to identity, club, state and index. Contact
+ * details, birth dates and every other field GHIN returns are dropped. */
+export function mapSpicyGolfMatches(
+  envelope: unknown,
+  options: SpicyGolfMappingOptions,
+): GolferMatch[] {
+  const rows = (envelope as { golfers?: unknown })?.golfers;
+  if (!Array.isArray(rows)) throw new AppError("UNAVAILABLE", "Invalid search");
+  const matches: GolferMatch[] = [];
+  const seen = new Set<string>();
+  for (const raw of rows.slice(0, 50)) {
+    if (!raw || typeof raw !== "object") continue;
+    const row = raw as Record<string, unknown>;
+    const ghinNumber = canonicalSpicyGolfId(row.ghin);
+    const name = allowedName(row);
+    if (!ghinNumber || !name || seen.has(ghinNumber)) continue;
+    seen.add(ghinNumber);
+    const lookup = normalizeSpicyGolfRow(ghinNumber, row, {
+      ...options,
+      allowNames: false,
+    });
+    const club = shortText(row.club_name) ?? shortText(row.association_name);
+    const state = shortText(row.state);
+    matches.push({
+      ghinNumber,
+      name,
+      ...(club ? { club } : {}),
+      ...(state && /^[A-Z-]{2,6}$/.test(state) ? { state } : {}),
+      ...(lookup.ok
+        ? {
+            handicapIndex: lookup.data.handicapIndex,
+            display: lookup.data.display,
+            ...(lookup.data.effectiveDate
+              ? { effectiveDate: lookup.data.effectiveDate }
+              : {}),
+          }
+        : {}),
+    });
+    if (matches.length >= 25) break;
+  }
+  return matches;
+}
+
 export function mapSpicyGolfError(error: unknown): PublicError {
   try {
     const value = record(error),

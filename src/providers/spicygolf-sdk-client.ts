@@ -411,6 +411,26 @@ export class SpicyGolfSdkSession {
       ? { isErr: () => false, value: reply.value }
       : { isErr: () => true, error: reply.error };
   }
+  /** GHIN global search by name (active US golfers, up to 25 rows). */
+  async searchByName(query: {
+    firstName: string;
+    lastName?: string;
+    state?: string;
+  }): Promise<SpicyGolfResult> {
+    if (!this.status().authenticated)
+      throw new AppError(
+        "AUTH_REQUIRED",
+        "Private session expired or disconnected.",
+      );
+    if (this.#options.controlledTest)
+      throw new AppError("UNSUPPORTED", "Controlled tests do not search.");
+    const reply = await this.#request("searchByName", { query });
+    if (reply.error?.statusCode === 401 || reply.error?.statusCode === 403)
+      await this.close();
+    return reply.ok
+      ? { isErr: () => false, value: reply.value }
+      : { isErr: () => true, error: reply.error };
+  }
   #request(operation: string, args: unknown): Promise<WireReply> {
     if (!this.#worker || this.#closed) return Promise.reject(unavailable());
     if (this.#pending.size >= 32)

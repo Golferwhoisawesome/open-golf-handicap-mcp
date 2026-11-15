@@ -17,6 +17,7 @@ USGA, GHIN and Handicap Index are trademarks of the United States Golf Associati
 ## What it can do
 
 - "What's my handicap?" / "Look up handicaps for 1234567 and 7654321"
+- "Find Alex Smith in North Carolina and add them to my roster"
 - "Save Alex, GHIN 1234567, to my roster" (or paste a screenshot of a list and let the assistant read it)
 - "Refresh everyone on my roster and tell me who changed"
 - "What's Alex's course handicap at a 71.4 / 131 course, par 72?"
@@ -100,6 +101,7 @@ Your roster and settings live in `~/.open-golf-handicap` (`%USERPROFILE%\.open-g
 | Tool                                                                | What it does                                                                    |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `get_golfer_handicap`                                               | One golfer's Handicap Index, with its effective date and when it was retrieved  |
+| `search_golfers`                                                    | Find golfers by first/last name and US state to get their GHIN number           |
 | `get_multiple_handicaps`                                            | Up to 100 golfers at once; each one succeeds or fails on its own                |
 | `get_course_handicap`                                               | Course handicap from an index plus course rating, slope and par (9 or 18 holes) |
 | `save_golfer` / `save_multiple_golfers`                             | Add golfers to your roster (bulk import asks you to confirm first)              |
@@ -108,7 +110,7 @@ Your roster and settings live in `~/.open-golf-handicap` (`%USERPROFILE%\.open-g
 | `get_handicap_changes`                                              | Changes this tool has observed over a period                                    |
 | `export_golfer_roster` / `delete_golfer_roster`                     | Export your roster as JSON / delete it (asks you to confirm)                    |
 | `get_connection_status` / `disconnect_provider`                     | Connection details and limits / end the GHIN session                            |
-| `get_handicap_history` / `get_recent_scores`                        | Not available with GHIN yet (demo data only)                                    |
+| `get_handicap_history` / `get_recent_scores`                        | Not available with GHIN (demo data only)                                        |
 
 Plus indexes are shown with a `+` (for example `+0.9`). A missing value is reported as unavailable, never as zero.
 

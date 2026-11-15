@@ -282,8 +282,13 @@ globalThis.fetch = async (
         (credentials.accountType === "api"
           ? "/api/v1/users/login.json"
           : "/api/v1/golfer_login.json");
+    // Golfer lookup by number (search.json) or by name (golfers.json, GHIN's
+    // global search). Both are reads and count against the search limits.
     const read =
-      api && method === "GET" && url.pathname === "/api/v1/golfers/search.json";
+      api &&
+      method === "GET" &&
+      (url.pathname === "/api/v1/golfers/search.json" ||
+        (url.pathname === "/api/v1/golfers.json" && !policy));
     if (
       url.username ||
       url.password ||
@@ -576,6 +581,7 @@ port.on(
     args?: {
       numbers?: number[];
       request?: { status: null; updated_since?: string };
+      query?: { firstName?: unknown; lastName?: unknown; state?: unknown };
     };
   }) => {
     if (message.operation === "close") {
@@ -664,6 +670,40 @@ port.on(
                 },
               };
             }
+          } else if (
+            message.operation === "searchByName" &&
+            connected &&
+            !policy
+          ) {
+            const query = message.args?.query;
+            const name = /^[\p{L}][\p{L}' .-]{0,39}$/u;
+            const firstName = query?.firstName,
+              lastName = query?.lastName,
+              state = query?.state;
+            if (
+              typeof firstName !== "string" ||
+              !name.test(firstName) ||
+              (lastName !== undefined &&
+                (typeof lastName !== "string" || !name.test(lastName))) ||
+              (state !== undefined &&
+                (typeof state !== "string" || !/^[A-Z]{2}$/.test(state)))
+            )
+              throw new Error("Invalid name search");
+            // GHIN's number search rejects name queries; the global search
+            // needs a country scope. Active US golfers, one page of 25.
+            const response = await client.golfers.globalSearch({
+              first_name: firstName,
+              ...(lastName ? { last_name: lastName } : {}),
+              ...(state ? { state } : {}),
+              country: "USA",
+              status: "Active",
+              per_page: 25,
+              page: 1,
+            });
+            guard();
+            result = response.isErr()
+              ? { ok: false, error: safeSdkError(response.error) }
+              : { ok: true, value: { golfers: response.value } };
           } else if (message.operation === "getMany" && connected) {
             const numbers = message.args?.numbers,
               request = message.args?.request;

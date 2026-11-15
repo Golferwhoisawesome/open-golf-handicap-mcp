@@ -9,7 +9,7 @@ First public release.
 - One-time unofficial-use notice that must be acknowledged before the first live sign-in.
 - Conservative request limits: 2-second pacing, 60 lookup requests per session, 200 lookups and 10 sign-ins per 24 hours, at most one retry, persisted 429 cooldowns and 403 stop.
 - Encrypted local roster (AES-256-GCM) with its key in the OS password store; shared usage counters across server processes.
-- 16 MCP tools: single and batch lookup, roster management with confirmed bulk import and deletion, refresh with change history, export, course handicap calculation, connection status and disconnect.
+- 17 MCP tools: single and batch lookup, name search (first/last name and US state), roster management with confirmed bulk import and deletion, refresh with change history, export, course handicap calculation, connection status and disconnect.
 - macOS, Linux and Windows support (owner-only folders via POSIX modes or Windows ACLs).
 - Demo mode with synthetic golfers when no login is saved (or with `--demo`).
 - Bundles `@spicygolf/ghin` 0.20.1 with a patched Zod 4.6.7 dependency.

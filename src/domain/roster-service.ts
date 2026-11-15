@@ -194,6 +194,18 @@ export class RosterService {
     this.connected(p);
     return { results: await this.lookups.getMany(p.subject, numbers, force) };
   }
+  async searchGolfers(
+    p: Principal,
+    query: { firstName: string; lastName?: string; state?: string },
+  ) {
+    this.connected(p);
+    const provider = this.lookups.provider;
+    if (!provider.searchByName)
+      throw new AppError("UNSUPPORTED", "Name search is unavailable.");
+    await provider.assertConnected?.({ subject: p.subject });
+    const matches = await provider.searchByName({ subject: p.subject }, query);
+    return { matches, limitedTo: 25 };
+  }
   /** The signed-in golfer's own GHIN number, when the provider knows it. */
   async ownNumber(p: Principal): Promise<string> {
     this.connected(p);

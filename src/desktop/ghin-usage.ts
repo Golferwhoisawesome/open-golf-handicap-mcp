@@ -80,7 +80,7 @@ export class GhinUsageRepository {
     }
   }
   async #change(change: (ledger: UsageLedger) => UsageLedger): Promise<void> {
-    const run = this.#writes.then(() =>
+    const write = () =>
       this.store.update(this.#name, (bytes) => {
         const time = this.now();
         const next = this.#prune(
@@ -88,8 +88,25 @@ export class GhinUsageRepository {
           time,
         );
         return Buffer.from(JSON.stringify(ledgerSchema.parse(next)), "utf8");
-      }),
-    );
+      });
+    // Several server processes share this file; a busy lock is retried a few
+    // times before the caller fails closed.
+    const run = this.#writes.then(async () => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await write();
+        } catch (error) {
+          if (
+            (error as { code?: unknown })?.code !== "VAULT_BUSY" ||
+            attempt >= 4
+          )
+            throw error;
+          await new Promise((resolve) =>
+            setTimeout(resolve, 100 * (attempt + 1)),
+          );
+        }
+      }
+    });
     this.#writes = run.catch(() => undefined);
     return run;
   }

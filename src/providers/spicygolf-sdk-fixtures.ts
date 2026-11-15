@@ -126,6 +126,37 @@ export function createSdkFixtureFetch(
             });
       }
       if (
+        url.pathname === "/api/v1/golfers.json" &&
+        (!init?.method || init.method === "GET")
+      ) {
+        // Synthetic global name search: requires the country scope GHIN needs.
+        stats.batchRequests++;
+        if (url.searchParams.get("country") !== "USA")
+          return json({ golfers: [] });
+        const first = (url.searchParams.get("first_name") ?? "").toLowerCase();
+        const last = (url.searchParams.get("last_name") ?? "").toLowerCase();
+        const state = url.searchParams.get("state");
+        return json({
+          golfers: rows
+            .filter(
+              (row) =>
+                String(row.first_name ?? "")
+                  .toLowerCase()
+                  .startsWith(first) &&
+                (!last ||
+                  String(row.last_name).toLowerCase().startsWith(last)) &&
+                (!state || state === "NC"),
+            )
+            .map((row) => ({
+              ...row,
+              state: "NC",
+              club_name: "Synthetic Golf Club",
+              phone_number: "555-0100",
+              email: "synthetic@example.invalid",
+            })),
+        });
+      }
+      if (
         url.pathname !== "/api/v1/golfers/search.json" ||
         (init?.method && init.method !== "GET")
       )

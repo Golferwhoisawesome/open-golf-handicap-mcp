@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import { AppError } from "../domain/errors.js";
 import type { LookupResult } from "../domain/models.js";
 import type {
+  GolferMatch,
   HandicapProvider,
+  NameQuery,
   ProviderConnectionState,
   ProviderContext,
 } from "./handicap-provider.js";
@@ -12,6 +14,7 @@ import {
   dateOnly,
   mapSpicyGolfBatch,
   mapSpicyGolfError,
+  mapSpicyGolfMatches,
 } from "./spicygolf-mapping.js";
 import { assertLiveAccessEnabled } from "./live-access.js";
 import { DAILY_LIMITS, SESSION_LIMITS } from "./request-policy.js";
@@ -306,6 +309,31 @@ export class OnDemandGhinProvider implements HandicapProvider {
     } finally {
       options?.signal?.removeEventListener("abort", stop);
     }
+  }
+  async searchByName(
+    context: ProviderContext,
+    query: NameQuery,
+  ): Promise<GolferMatch[]> {
+    await this.assertConnected(context);
+    const session = await this.#ready();
+    const result = await session.searchByName(query);
+    if (result.isErr()) {
+      const error = mapSpicyGolfError(result.error);
+      if (["AUTH_REQUIRED", "FORBIDDEN"].includes(error.code))
+        await session.close();
+      throw new AppError(
+        error.code as AppError["code"],
+        error.message,
+        error.retryAfterMs,
+      );
+    }
+    await this.assertConnected(context);
+    return mapSpicyGolfMatches(result.value, {
+      source: this.id,
+      synthetic: this.options.mode === "offline-test",
+      allowNames: true,
+      retrievedAt: new Date().toISOString(),
+    });
   }
   async getHistory(context: ProviderContext): Promise<never> {
     await this.assertConnected(context);

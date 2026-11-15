@@ -1,7 +1,9 @@
 import { AppError } from "../domain/errors.js";
 import { formatIndex, type LookupResult } from "../domain/models.js";
 import type {
+  GolferMatch,
   HandicapProvider,
+  NameQuery,
   ProviderContext,
   HistoryEntry,
   ScoreEntry,
@@ -23,6 +25,27 @@ export class MockHandicapProvider implements HandicapProvider {
     courses: false,
     live: false,
   };
+  /** Demo search over the synthetic fixtures ("Demo" matches all). */
+  async searchByName(
+    _context: ProviderContext,
+    query: NameQuery,
+  ): Promise<GolferMatch[]> {
+    const wanted = [query.firstName, query.lastName]
+      .filter(Boolean)
+      .map((part) => part!.toLowerCase());
+    return Object.entries(fixtures)
+      .filter(([, row]) =>
+        wanted.every((part) => row.name.toLowerCase().includes(part)),
+      )
+      .map(([ghinNumber, row]) => ({
+        ghinNumber,
+        name: row.name,
+        club: "Demo Golf Club",
+        state: "NC",
+        handicapIndex: row.index,
+        display: formatIndex(row.index),
+      }));
+  }
   async getMany(
     _context: ProviderContext,
     numbers: string[],

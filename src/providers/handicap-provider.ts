@@ -30,6 +30,21 @@ export interface ScoreEntry {
   holes: 9 | 18;
   courseName?: string;
 }
+/** One result of a name search: only what's needed to pick the right golfer. */
+export interface GolferMatch {
+  ghinNumber: string;
+  name: string;
+  club?: string;
+  state?: string;
+  handicapIndex?: number;
+  display?: string;
+  effectiveDate?: string;
+}
+export interface NameQuery {
+  firstName: string;
+  lastName?: string;
+  state?: string;
+}
 export interface HandicapProvider {
   readonly id: string;
   readonly capabilities: ProviderCapabilities;
@@ -54,4 +69,9 @@ export interface HandicapProvider {
     limit: number,
   ): Promise<ScoreEntry[]>;
   disconnect(context: ProviderContext): Promise<void>;
+  /** Find golfers by name (optionally within a US state). */
+  searchByName?(
+    context: ProviderContext,
+    query: NameQuery,
+  ): Promise<GolferMatch[]>;
 }

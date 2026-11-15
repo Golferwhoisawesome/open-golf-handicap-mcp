@@ -120,8 +120,47 @@ export function createMcpServer(service: RosterService, principal: Principal) {
     (a) => service.lookup(principal, a.ghinNumbers, a.forceRefresh),
   );
   tool(
+    "search_golfers",
+    "Find golfers by name to get their GHIN number and current index. Needs a first name; add a last name and a 2-letter US state code (e.g. NC) to narrow it. Returns up to 25 active US golfers. Several people often share a name: show the matches (name, club, state) and let the user pick before saving anyone to the roster.",
+    z
+      .object({
+        firstName: z
+          .string()
+          .trim()
+          .regex(/^[\p{L}][\p{L}' .-]{0,39}$/u),
+        lastName: z
+          .string()
+          .trim()
+          .regex(/^[\p{L}][\p{L}' .-]{0,39}$/u)
+          .optional(),
+        state: z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z]{2}$/)
+          .transform((value) => value.toUpperCase())
+          .optional(),
+      })
+      .strict(),
+    z.object({
+      matches: z.array(
+        z.object({
+          ghinNumber: z.string(),
+          name: z.string(),
+          club: z.string().optional(),
+          state: z.string().optional(),
+          handicapIndex: z.number().optional(),
+          display: z.string().optional(),
+          effectiveDate: z.string().optional(),
+        }),
+      ),
+      limitedTo: z.number(),
+    }),
+    false,
+    (a) => service.searchGolfers(principal, a),
+  );
+  tool(
     "get_handicap_history",
-    "Retrieve authorized provider history where supported; inspect source and synthetic provenance.",
+    "Handicap history. Demo mode only: not available with a GHIN login (fails with UNSUPPORTED). Do not offer it to GHIN users.",
     z
       .object({
         ghinNumber: ghinSchema,
@@ -141,7 +180,7 @@ export function createMcpServer(service: RosterService, principal: Principal) {
   );
   tool(
     "get_recent_scores",
-    "Retrieve authorized recent score fixtures; unsupported providers fail explicitly.",
+    "Recent scores. Demo mode only: not available with a GHIN login (fails with UNSUPPORTED). Do not offer it to GHIN users.",
     z
       .object({
         ghinNumber: ghinSchema,

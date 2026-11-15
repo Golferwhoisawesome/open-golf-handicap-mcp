@@ -444,3 +444,80 @@ test("a golfer login saves the GHIN number reported by GHIN's sign-in, without a
     await rm(f.root, { recursive: true, force: true });
   }
 });
+
+test("name search returns identity, club, state and index only", async () => {
+  const f = await profile();
+  try {
+    const directory = await ensureProfileDirectory(f.directory);
+    const { provider: active, usage } = provider(directory);
+    try {
+      const matches = await active.searchByName!(owner, {
+        firstName: "Synthetic",
+        lastName: "SDK",
+        state: "NC",
+      });
+      assert.equal(matches.length, 5);
+      assert.deepEqual(matches[4], {
+        ghinNumber: "900000005",
+        name: "Synthetic SDK 5",
+        club: "Synthetic Golf Club",
+        state: "NC",
+        handicapIndex: -0.9,
+        display: "+0.9",
+        effectiveDate: "2026-10-29",
+      });
+      const text = JSON.stringify(matches);
+      assert.equal(text.includes("555-0100"), false, "no phone numbers");
+      assert.equal(text.includes("example.invalid"), false, "no emails");
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Validation lookup at sign-in plus one search, both counted.
+      assert.equal((await usage.allowance()).search, 198);
+    } finally {
+      await active.close();
+    }
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
+
+test(
+  "search_golfers works through the MCP server and in demo mode",
+  { timeout: 90_000 },
+  async () => {
+    const f = await profile();
+    try {
+      const demo = await stdioClient(["--demo"]);
+      try {
+        const found = await call(demo, "search_golfers", { firstName: "Demo" });
+        assert.equal(found.ok, true);
+        assert.equal(found.data.matches.length, 5);
+      } finally {
+        await demo.close();
+      }
+      await saveVerifiedLogin({
+        directory: f.directory,
+        login: login(),
+        env: fileStore,
+      });
+      const live = await stdioClient(["--profile", f.directory], fileStore);
+      try {
+        const found = await call(live, "search_golfers", {
+          firstName: "synthetic",
+          lastName: "sdk",
+          state: "nc",
+        });
+        assert.equal(found.ok, true);
+        assert.equal(found.data.matches[0].ghinNumber, "900000001");
+        const bad = await live.callTool({
+          name: "search_golfers",
+          arguments: { firstName: "<script>" },
+        });
+        assert.equal(bad.isError, true, "invalid names are rejected");
+      } finally {
+        await live.close();
+      }
+    } finally {
+      await rm(f.root, { recursive: true, force: true });
+    }
+  },
+);
