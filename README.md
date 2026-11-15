@@ -30,111 +30,70 @@ Your GHIN password stays on your computer. It's typed into a private terminal wi
 - An MCP client that runs local servers, such as Claude Desktop, Claude Code, Cursor or Codex
 - Your own GHIN account (username/email and password) and your GHIN number
 
-## Quick start
+## Setup (about two minutes)
 
-### 1. Create your private profile (one time)
+### 1. Sign in once
 
-Pick a folder for your encrypted profile. The examples use `~/.open-golf-handicap` (on Windows, `%USERPROFILE%\.open-golf-handicap`).
-
-macOS / Linux:
+Open a terminal (Terminal on macOS, PowerShell or Windows Terminal on Windows) and run:
 
 ```bash
-npx -y -p open-golf-handicap-mcp open-golf-handicap-setup init --profile ~/.open-golf-handicap
+npx -y -p open-golf-handicap-mcp open-golf-handicap-setup login
 ```
 
-Windows (PowerShell):
+The first time, it shows the notice above and asks you to type `I UNDERSTAND`. Then it asks for your GHIN username, GHIN password and GHIN number (nothing appears as you type them). It checks them with GHIN once, then saves them in your computer's own password store:
 
-```powershell
-npx -y -p open-golf-handicap-mcp open-golf-handicap-setup init --profile "$env:USERPROFILE\.open-golf-handicap"
-```
+| System  | Where your login is kept                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------- |
+| macOS   | Keychain                                                                                            |
+| Windows | Encrypted with your Windows account (Data Protection API)                                           |
+| Linux   | Your desktop keyring via `secret-tool` (or see [Linux without a keyring](#linux-without-a-keyring)) |
 
-Choose a **vault passphrase**. It encrypts your roster and any saved login on this computer. It is not your GHIN password. There is no way to recover it, so keep it somewhere safe.
+You don't need to do this again unless your GHIN password changes.
 
-### 2. Sign in to GHIN (each time you want to use it)
+### 2. Add it to your AI app
 
-In a terminal you can leave open:
+**Claude Code:**
 
 ```bash
-npx -y -p open-golf-handicap-mcp open-golf-handicap-setup connect-ghin --profile ~/.open-golf-handicap
+claude mcp add golf-handicap -- npx -y open-golf-handicap-mcp
 ```
 
-(On Windows, use the same `--profile "$env:USERPROFILE\.open-golf-handicap"` path.)
-
-The first time, read the notice and type `I UNDERSTAND`. Then enter your vault passphrase, GHIN username, GHIN password and your own GHIN number. Nothing is shown as you type the secrets.
-
-**Leave this window open while you use your assistant.** A session lasts up to one hour. Press Ctrl-C to end it early.
-
-To avoid retyping your GHIN password, add `--remember-login` once. Your login is then kept in the encrypted vault, and later sessions only need:
-
-```bash
-npx -y -p open-golf-handicap-mcp open-golf-handicap-setup resume-ghin --profile ~/.open-golf-handicap
-```
-
-To remove a saved login: `open-golf-handicap-setup disconnect-ghin --profile ~/.open-golf-handicap`.
-
-### 3. Add it to your AI assistant
-
-Use the **full path** to your profile folder (`~` is not expanded in JSON).
-
-**Claude Desktop:** edit `claude_desktop_config.json` (Settings → Developer → Edit Config).
-
-macOS / Linux:
+**Claude Desktop:** Settings → Developer → Edit Config, then add:
 
 ```json
 {
   "mcpServers": {
     "golf-handicap": {
       "command": "npx",
-      "args": [
-        "-y",
-        "open-golf-handicap-mcp",
-        "--ghin",
-        "--profile",
-        "/Users/you/.open-golf-handicap"
-      ]
+      "args": ["-y", "open-golf-handicap-mcp"]
     }
   }
 }
 ```
 
-Windows:
-
-```json
-{
-  "mcpServers": {
-    "golf-handicap": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "open-golf-handicap-mcp",
-        "--ghin",
-        "--profile",
-        "C:\\Users\\you\\.open-golf-handicap"
-      ]
-    }
-  }
-}
-```
-
-Restart Claude Desktop after saving. **Cursor** uses the same `mcpServers` format in `~/.cursor/mcp.json`.
-
-**Claude Code:**
-
-```bash
-claude mcp add golf-handicap -- npx -y open-golf-handicap-mcp --ghin --profile /Users/you/.open-golf-handicap
-```
+On Windows use `"command": "cmd"` and `"args": ["/c", "npx", "-y", "open-golf-handicap-mcp"]`. Restart Claude Desktop after saving. **Cursor** uses the same `mcpServers` format in `~/.cursor/mcp.json`.
 
 **Codex** (`~/.codex/config.toml`):
 
 ```toml
 [mcp_servers.golf_handicap]
 command = "npx"
-args = ["-y", "open-golf-handicap-mcp", "--ghin", "--profile", "/Users/you/.open-golf-handicap"]
+args = ["-y", "open-golf-handicap-mcp"]
 ```
 
-Start the GHIN session (step 2) **before** opening a new chat, then ask: _"Check my golf handicap connection."_
+### 3. Ask
+
+_"What's my golf handicap?"_ The server signs in to GHIN by itself the first time a lookup needs it. There's nothing to keep open.
+
+### Other commands
+
+```bash
+npx -y -p open-golf-handicap-mcp open-golf-handicap-setup status        # what's saved, lookups left today
+npx -y -p open-golf-handicap-mcp open-golf-handicap-setup logout        # remove your GHIN login (keeps your roster)
+npx -y -p open-golf-handicap-mcp open-golf-handicap-setup logout --all  # also forget your roster
+```
+
+Your roster and settings live in `~/.open-golf-handicap` (`%USERPROFILE%\.open-golf-handicap` on Windows). Add `--profile DIR` to any command (and to the server's `args`) to use a different folder.
 
 ## Tools
 
@@ -161,42 +120,39 @@ This tool deliberately keeps GHIN traffic low. These limits are this project's o
 - At most 60 GHIN lookup requests per session, and 200 lookups plus 10 sign-ins per rolling 24 hours (one lookup request can cover up to 100 golfers)
 - A failed request is retried at most once
 - If GHIN says "slow down" (HTTP 429), lookups pause for as long as GHIN asks (at least 1 minute, or 15 minutes if it doesn't say), even across sessions
-- If GHIN refuses access (HTTP 403), lookups stop until you sign in again with `connect-ghin`
+- If GHIN refuses access (HTTP 403), lookups stop until you sign in again with `login`
 - Results are cached for 1 hour. Nothing refreshes in the background.
 
 ## Privacy and security
 
-- Your GHIN password is entered only in the private terminal. It is never passed through the AI chat, command-line arguments, environment variables or MCP configuration.
-- By default your login lives only in memory for the session. `--remember-login` stores it encrypted in your profile vault.
+- Your GHIN password is typed only into the setup command in your terminal. It is never passed through the AI chat, command-line arguments, environment variables or the AI app's config.
+- It is stored in your operating system's password store (see the table above), together with the key that encrypts your roster.
 - Your roster is encrypted on disk (AES-256-GCM) in a folder only your user account can access.
-- The MCP server process never receives your GHIN credentials. It gets only lookup results, through a private local channel to the setup terminal.
 - Nothing is sent anywhere except GHIN's own servers (and Google's Firebase service, which the GHIN app uses during sign-in). There is no telemetry and no central server.
-- The AI assistant you use does see the handicap results and roster names you ask about. Its provider's privacy policy applies to that.
+- The AI app you use does see the handicap results and roster names you ask about. Its provider's privacy policy applies to that.
 
 More detail is in [SECURITY.md](SECURITY.md) and [docs/security-model.md](docs/security-model.md).
 
 ## Try it without a GHIN account
 
-Run the server without `--ghin` to get a demo mode with synthetic golfers `900000001` through `900000005`:
-
-```json
-{ "command": "npx", "args": ["-y", "open-golf-handicap-mcp"] }
-```
-
-Demo data is fake. Never use it to update a real competition.
+Without a saved login, the server runs in demo mode with synthetic golfers `900000001` through `900000005`. Add `--demo` to the server's `args` to force demo mode. Demo data is fake; never use it for a real competition.
 
 ## Troubleshooting
 
-| Problem                                                   | Fix                                                                                                                                                      |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Assistant says "Unlock the local profile" / auth required | Start `connect-ghin` or `resume-ghin` and keep that window open, then start a new chat or restart the client                                             |
-| `PRIVATE_INPUT_REQUIRED`                                  | Run setup in a real terminal window (Terminal, iTerm, Windows Terminal), not from inside an AI tool or an IDE output pane                                |
-| `PROFILE_INVALID`                                         | The profile folder's permissions were changed or it is a link. Use a folder inside your home directory that only you can access                          |
-| Sign-in fails                                             | Check your GHIN username and password in the GHIN app first. The number you enter must be your own GHIN number                                           |
-| `RATE_LIMITED`                                            | You hit this tool's daily limit or GHIN asked it to slow down. Wait and try later                                                                        |
-| Session ended after an hour                               | Sessions are capped at one hour. Run `resume-ghin` (if you used `--remember-login`) or `connect-ghin` again                                              |
-| Client can't find `npx`                                   | Desktop apps may not see your shell's PATH (common with nvm). Use the full path from `which npx` (macOS/Linux) or `where npx` (Windows) as the `command` |
-| Path too long (macOS/Linux)                               | Unix socket paths are limited to about 100 characters. Use a shorter profile path such as `~/.open-golf-handicap`                                        |
+| Problem                                         | Fix                                                                                                                                                      |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Assistant says GHIN sign-in is needed           | Run the `login` command in a terminal, then restart your AI app                                                                                          |
+| Assistant only shows demo golfers               | No login was found when the AI app started. Run `login`, then restart the AI app                                                                         |
+| `PRIVATE_INPUT_REQUIRED`                        | Run `login` in a real terminal window (Terminal, iTerm, Windows Terminal), not inside an AI tool or an IDE output pane                                   |
+| Sign-in fails                                   | Check your username and password in the GHIN app first. The GHIN number must be your own                                                                 |
+| `RATE_LIMITED`                                  | You reached this tool's daily limit, or GHIN asked it to slow down. `status` shows when it resets                                                        |
+| macOS asks to allow access to the Keychain item | Click **Always Allow** so the server can read your saved login                                                                                           |
+| Client can't find `npx`                         | Desktop apps may not see your shell's PATH (common with nvm). Use the full path from `which npx` (macOS/Linux) or `where npx` (Windows) as the `command` |
+| `PROFILE_INVALID`                               | The profile folder's permissions were changed or it is a link. Use a folder inside your home directory that only you can access                          |
+
+### Linux without a keyring
+
+On a server or minimal desktop without `secret-tool`, set `OGH_CREDENTIAL_STORE=file` for both the `login` command and the server (in your AI app's config `env`). The login is then kept in `~/.open-golf-handicap/credentials.json`, readable only by your account.
 
 ## Development
 

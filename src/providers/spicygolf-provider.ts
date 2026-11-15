@@ -115,7 +115,7 @@ export class SpicyGolfProvider implements HandicapProvider {
       credentialsStored: false,
       expiresAt: null,
       limitations: [
-        "Demo mode: all handicap data is synthetic. Use --ghin with a connected profile for real GHIN lookups.",
+        "Demo mode: all handicap data is synthetic. For real GHIN lookups, run open-golf-handicap-setup login in a terminal and restart your AI app.",
       ],
     };
   }

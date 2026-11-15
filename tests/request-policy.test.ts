@@ -14,8 +14,6 @@ import {
 } from "../src/providers/request-policy.js";
 import { GhinUsageRepository } from "../src/desktop/ghin-usage.js";
 import { InMemorySecretStore } from "../src/desktop/secret-store.js";
-import { GhinCredentialRepository } from "../src/desktop/ghin-credentials.js";
-import { GhinAuthenticatedProvider } from "../src/providers/ghin-provider.js";
 import { mapSpicyGolfError } from "../src/providers/spicygolf-mapping.js";
 import { AppError } from "../src/domain/errors.js";
 import { LIVE_GHIN_RELEASE_ENABLED } from "../src/providers/live-access.js";
@@ -168,77 +166,4 @@ test("usage ledger persists counts, cooldowns, refusals and consent across insta
   // Offline fixtures keep a separate ledger.
   const offline = new GhinUsageRepository(store, "offline-test", () => now);
   assert.equal((await offline.allowance()).acknowledged, false);
-});
-
-test("live provider refuses to start without a ledger or an acknowledgment", async () => {
-  const store = await unlockedStore();
-  const repository = new GhinCredentialRepository(store);
-  await assert.rejects(
-    GhinAuthenticatedProvider.connect({
-      ownerSubject: "local-owner",
-      mode: "ghin",
-      repository,
-      credentials: credentials(),
-    }),
-    code("INVALID_INPUT"),
-  );
-  await assert.rejects(
-    GhinAuthenticatedProvider.connect({
-      ownerSubject: "local-owner",
-      mode: "ghin",
-      repository,
-      usage: new GhinUsageRepository(store, "ghin"),
-      credentials: credentials(),
-    }),
-    code("AUTH_REQUIRED"),
-  );
-  assert.equal((await repository.status()).configured, false);
-});
-
-test("persisted cooldowns and refusals block new sessions before any sign-in", async () => {
-  const store = await unlockedStore();
-  const repository = new GhinCredentialRepository(store);
-  const usage = new GhinUsageRepository(store, "offline-test");
-  const provider = await GhinAuthenticatedProvider.connect({
-    ownerSubject: "local-owner",
-    mode: "offline-test",
-    repository,
-    usage,
-    remember: true,
-    credentials: credentials(),
-    sessionOptions: { fixtureScenario: "rate-limited" },
-  });
-  try {
-    await assert.rejects(
-      provider.getMany({ subject: "local-owner" }, ["900000002"]),
-      code("RATE_LIMITED"),
-    );
-  } finally {
-    await provider.close();
-  }
-  // Let the fire-and-forget ledger write settle.
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  assert((await usage.allowance()).cooldownUntil > Date.now());
-  await assert.rejects(
-    GhinAuthenticatedProvider.connect({
-      ownerSubject: "local-owner",
-      mode: "offline-test",
-      repository,
-      usage,
-    }),
-    code("RATE_LIMITED"),
-  );
-
-  const refused = new InMemorySecretStore();
-  const refusedUsage = new GhinUsageRepository(refused, "offline-test");
-  await refusedUsage.record({ at: Date.now(), forbidden: true });
-  await assert.rejects(
-    GhinAuthenticatedProvider.connect({
-      ownerSubject: "local-owner",
-      mode: "offline-test",
-      repository: new GhinCredentialRepository(refused),
-      usage: refusedUsage,
-    }),
-    code("FORBIDDEN"),
-  );
 });

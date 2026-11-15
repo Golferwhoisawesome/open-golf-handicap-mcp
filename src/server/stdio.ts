@@ -1,141 +1,119 @@
 #!/usr/bin/env node
+import { join, resolve } from "node:path";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createService, type OfflineDependencies } from "./bootstrap.js";
 import { createMcpServer } from "../tools/register.js";
 import { createOfflineSpicyGolfProvider } from "../providers/spicygolf-fixtures.js";
-import { inspectProfile } from "../desktop/profile.js";
-import {
-  getRosterKeyLease,
-  watchRosterSession,
-  type RosterKeyLease,
-} from "../desktop/session-broker.js";
-import { AppError, safeError } from "../domain/errors.js";
-import { DesktopGhinProvider } from "../providers/desktop-ghin-provider.js";
-import { assertLiveAccessEnabled } from "../providers/live-access.js";
+import { AppError } from "../domain/errors.js";
 import { onTermination } from "../desktop/private-terminal.js";
+import { openCredentialStore } from "../desktop/credential-store.js";
+import { GhinUsageRepository } from "../desktop/ghin-usage.js";
+import {
+  defaultProfileDirectory,
+  existingProfileDirectory,
+  loadSecrets,
+  ProfileStateStore,
+  wipeSecrets,
+} from "../desktop/local-profile.js";
+import { OnDemandGhinProvider } from "../providers/on-demand-ghin-provider.js";
+
+const HELP = `open-golf-handicap-mcp [--profile DIR] [--demo]
+
+An MCP server for your AI app. It uses the GHIN login saved by
+"open-golf-handicap-setup login" and signs in only when a lookup needs it.
+Without a saved login it runs in demo mode with synthetic golfers.
+
+  --profile DIR  Profile folder (default: ~/.open-golf-handicap)
+  --demo         Always use synthetic demo data
+
+Unofficial; not affiliated with the USGA or GHIN.
+`;
 
 async function main() {
-  let profileDirectory: string | undefined,
+  let profile: string | undefined,
+    demo = false,
     fixtureProvider = false;
-  let ghinMode: "offline-test" | "ghin" | undefined;
   const args = process.argv.slice(2);
   for (let i = 0; i < args.length; i++) {
-    if (
-      args[i] === "--profile" &&
-      !profileDirectory &&
-      args[i + 1] &&
-      !args[i + 1]!.startsWith("--")
-    )
-      profileDirectory = args[++i];
-    else if (args[i] === "--offline-spicygolf" && !fixtureProvider)
-      fixtureProvider = true;
-    else if (args[i] === "--offline-ghin" && !ghinMode)
-      ghinMode = "offline-test";
-    else if (args[i] === "--ghin" && !ghinMode) ghinMode = "ghin";
+    if (args[i] === "--profile" && !profile && args[i + 1]) profile = args[++i];
+    else if (args[i] === "--demo") demo = true;
+    else if (args[i] === "--offline-spicygolf") fixtureProvider = true;
     else if (args[i] === "--help" && args.length === 1) {
-      process.stdout.write(
-        "open-golf-handicap-mcp [--offline-spicygolf | --offline-ghin | --ghin] [--profile DIRECTORY]\nUnofficial; not affiliated with the USGA or GHIN. --ghin requires a profile connected with open-golf-handicap-setup connect-ghin.\n",
-      );
+      process.stdout.write(HELP);
       return;
-    } else throw new AppError("INVALID_INPUT", "Unsupported stdio arguments.");
+    } else
+      throw new AppError(
+        "INVALID_INPUT",
+        `Unsupported option: ${String(args[i]).slice(0, 40)}. Run with --help.`,
+      );
   }
-  if (ghinMode === "ghin") assertLiveAccessEnabled();
-  if (ghinMode && (!profileDirectory || fixtureProvider))
-    throw new AppError(
-      "INVALID_INPUT",
-      "SDK sessions require a profile and exactly one provider mode.",
-    );
   const subject = "local-owner";
-  let server: ReturnType<typeof createMcpServer> | undefined;
-  let watcher:
-    | { sessionId: string; expiresAt: number; close(): void }
-    | undefined;
-  let lease: RosterKeyLease | undefined;
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const offline: OfflineDependencies = {};
+  let provider: OnDemandGhinProvider | undefined;
+  if (fixtureProvider)
+    offline.provider = createOfflineSpicyGolfProvider(subject);
+  else if (!demo) {
+    const directory = await existingProfileDirectory(
+      resolve(profile ?? defaultProfileDirectory()),
+    );
+    if (directory) {
+      const store = await openCredentialStore(directory);
+      const secrets = await loadSecrets(store);
+      if (secrets) {
+        const mode = secrets.login?.mode ?? "ghin";
+        provider = new OnDemandGhinProvider({
+          ownerSubject: subject,
+          mode,
+          usage: new GhinUsageRepository(
+            new ProfileStateStore(directory),
+            mode,
+          ),
+          loadLogin: async () => {
+            const current = await loadSecrets(store);
+            const login = current?.login;
+            current?.rosterKey.fill(0);
+            return login;
+          },
+        });
+        offline.provider = provider;
+        offline.localStorage = {
+          directory: join(directory, "roster"),
+          key: Buffer.from(secrets.rosterKey),
+        };
+        wipeSecrets(secrets);
+      }
+    }
+  }
+  const server = createMcpServer(createService(process.env, offline), {
+    subject,
+    scopes: ["roster:read", "roster:write"],
+  });
+  offline.localStorage?.key.fill(0);
   let stopping = false;
-  async function stop() {
+  const stop = async () => {
     if (stopping) return;
     stopping = true;
-    if (timer) clearTimeout(timer);
-    watcher?.close();
-    lease?.dispose();
     try {
-      await server?.close();
+      await provider?.close();
+      await server.close();
     } finally {
       process.exit(0);
     }
-  }
-  try {
-    const offline: OfflineDependencies = {};
-    if (fixtureProvider)
-      offline.provider = createOfflineSpicyGolfProvider(subject);
-    if (profileDirectory) {
-      const profile = await inspectProfile(profileDirectory);
-      if (!profile.initialized || !profile.profileId)
-        throw new AppError(
-          "AUTH_REQUIRED",
-          "Initialize and unlock the profile privately first.",
-        );
-      watcher = await watchRosterSession(
-        profileDirectory,
-        profile.profileId,
-        () => {
-          void stop();
-        },
-      );
-      lease = await getRosterKeyLease(profileDirectory, profile.profileId);
-      if (
-        stopping ||
-        lease.sessionId !== watcher.sessionId ||
-        lease.expiresAt !== watcher.expiresAt
-      )
-        throw new AppError(
-          "AUTH_REQUIRED",
-          "Local session changed during startup.",
-        );
-      offline.localStorage = {
-        directory: lease.rosterDirectory,
-        key: lease.key,
-      };
-      if (ghinMode)
-        offline.provider = await DesktopGhinProvider.attach(
-          profileDirectory,
-          profile.profileId,
-          lease.sessionId,
-          ghinMode,
-        );
-      timer = setTimeout(
-        () => {
-          void stop();
-        },
-        Math.max(0, lease.expiresAt - Date.now()),
-      );
-    }
-    server = createMcpServer(createService(process.env, offline), {
-      subject,
-      scopes: ["roster:read", "roster:write"],
-    });
-    server.server.onclose = () => {
-      void stop();
-    };
-    lease?.dispose();
-    await server.connect(new StdioServerTransport());
-    process.stdin.once("end", () => {
-      void stop();
-    });
-    onTermination(() => {
-      void stop();
-    });
-  } catch (error) {
-    stopping = true;
-    if (timer) clearTimeout(timer);
-    watcher?.close();
-    lease?.dispose();
-    await server?.close();
-    throw error;
-  }
+  };
+  server.server.onclose = () => {
+    void stop();
+  };
+  await server.connect(new StdioServerTransport());
+  process.stdin.once("end", () => {
+    void stop();
+  });
+  onTermination(() => {
+    void stop();
+  });
 }
 main().catch((error: unknown) => {
-  process.stderr.write(`Open Golf Handicap MCP: ${safeError(error).message}\n`);
+  // Fixed program text only; never provider data or credentials.
+  const message = error instanceof AppError ? error.message : "Startup failed.";
+  process.stderr.write(`Open Golf Handicap MCP: ${message}\n`);
   process.exitCode = 1;
 });

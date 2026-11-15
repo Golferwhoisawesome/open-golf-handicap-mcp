@@ -29,11 +29,13 @@ const messages: Record<ErrorCode, string> = {
   CONFLICT: "Data changed; retrieve it and retry.",
   UNAVAILABLE: "Provider is temporarily unavailable.",
   NO_HANDICAP: "No verified handicap is available.",
-  RATE_LIMITED: "Request limit reached; retry later.",
-  AUTH_REQUIRED: "Authentication is required.",
-  FORBIDDEN: "This action is not permitted.",
-  LIVE_ACCESS_DISABLED:
-    "Live GHIN access is disabled pending written authorization.",
+  RATE_LIMITED:
+    "A request limit was reached (this app's daily GHIN limit, or GHIN asked it to slow down). Try again later.",
+  AUTH_REQUIRED:
+    "GHIN sign-in is needed. In a terminal, run: open-golf-handicap-setup login — then try again.",
+  FORBIDDEN:
+    "This action is not permitted. If GHIN refused access, run open-golf-handicap-setup login in a terminal to sign in again.",
+  LIVE_ACCESS_DISABLED: "Live GHIN access is disabled in this build.",
   UNSUPPORTED: "This capability is unavailable.",
   CONFIRMATION_REQUIRED: "Review the preview and confirm the exact records.",
   STORAGE_ERROR: "Storage could not complete the operation.",

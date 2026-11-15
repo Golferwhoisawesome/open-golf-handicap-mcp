@@ -12,7 +12,7 @@ Only the latest published version receives fixes.
 
 ## Scope
 
-In scope: credential handling, the private terminal prompts, the profile vault and roster encryption, the local session channel (Unix socket / Windows named pipe), the SDK worker's endpoint allowlist and request limits, and MCP tool input handling.
+In scope: credential handling, the private terminal prompts, the saved-login storage (Keychain, DPAPI, Secret Service), roster encryption, the SDK worker's endpoint allowlist and request limits, and MCP tool input handling.
 
 Out of scope: whether using GHIN through this tool is permitted (see the warning in the [README](README.md)), vulnerabilities in GHIN itself, and attacks that need code already running as your OS user.
 

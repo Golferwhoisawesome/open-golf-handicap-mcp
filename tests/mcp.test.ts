@@ -290,7 +290,7 @@ test("read-only scope cannot mutate through MCP, and startup cannot enable live 
 test("stdio SDK handshake and tool call work with synthetic-only child process", async () => {
   const transport = new StdioClientTransport({
       command: process.execPath,
-      args: ["--import", "tsx", "src/server/stdio.ts"],
+      args: ["--import", "tsx", "src/server/stdio.ts", "--demo"],
       cwd: process.cwd(),
       env: {
         PATH: process.env.PATH ?? "",

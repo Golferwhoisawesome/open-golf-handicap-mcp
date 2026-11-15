@@ -196,7 +196,7 @@ try {
   // Both commands must actually run when launched through npm's bin links.
   for (const [bin, expected] of [
     [packageName, "open-golf-handicap-mcp ["],
-    ["open-golf-handicap-setup", "open-golf-handicap-setup <init"],
+    ["open-golf-handicap-setup", "open-golf-handicap-setup — sign in once"],
   ]) {
     const shim = join(
       installDir,
@@ -231,7 +231,7 @@ require("node:dgram").createSocket = deny;
   // A runtime assertion for this trusted Node program, not a security sandbox.
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: ["--require", guard, entrypoint],
+    args: ["--require", guard, entrypoint, "--demo"],
     cwd: installDir,
     env: {
       PATH: dirname(process.execPath),
