@@ -139,7 +139,10 @@ export class OnDemandGhinProvider implements HandicapProvider {
       const copy = {
         username: Buffer.from(login.username),
         password: Buffer.from(login.password),
-        ownGhinNumber: login.ownGhinNumber ?? "",
+        // Sign in only (installation + login). The saved login was verified
+        // when it was saved, and GHIN's sign-in response reports the number,
+        // so a check lookup of the user's own number would be redundant.
+        ownGhinNumber: "",
         accountType: login.accountType,
       };
       try {
