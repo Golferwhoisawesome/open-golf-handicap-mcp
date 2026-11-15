@@ -418,6 +418,7 @@ export class RosterService {
       authenticated: true,
       providerAuthenticated: state?.authenticated ?? locallyConnected,
       credentialsStored: state?.credentialsStored ?? false,
+      yourGhinNumber: state?.ownGhinNumber ?? null,
       sessionExpiresAt: state?.expiresAt ?? null,
       controlledTest: state?.controlledTest ?? false,
       provider: provider.id,

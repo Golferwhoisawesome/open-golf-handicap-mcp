@@ -26,7 +26,8 @@ export type GhinMode = "ghin" | "offline-test";
 export interface GhinLogin {
   username: Buffer;
   password: Buffer;
-  ownGhinNumber: string;
+  /** Optional: enables "my handicap" and an extra check at login. */
+  ownGhinNumber?: string;
   accountType: "golfer" | "api";
   mode: GhinMode;
 }
@@ -79,7 +80,10 @@ const secretsSchema = z
       .object({
         username: b64.max(428),
         password: b64.max(1368),
-        ownGhinNumber: z.string().regex(/^[1-9]\d{5,9}$/),
+        ownGhinNumber: z
+          .string()
+          .regex(/^[1-9]\d{5,9}$/)
+          .optional(),
         accountType: z.enum(["golfer", "api"]),
         mode: z.enum(["ghin", "offline-test"]),
       })
@@ -115,7 +119,9 @@ export async function loadSecrets(
             login: redact({
               username: Buffer.from(parsed.login.username, "base64"),
               password: Buffer.from(parsed.login.password, "base64"),
-              ownGhinNumber: parsed.login.ownGhinNumber,
+              ...(parsed.login.ownGhinNumber
+                ? { ownGhinNumber: parsed.login.ownGhinNumber }
+                : {}),
               accountType: parsed.login.accountType,
               mode: parsed.login.mode,
             }),
@@ -148,7 +154,9 @@ export async function saveSecrets(
             login: {
               username: secrets.login.username.toString("base64"),
               password: secrets.login.password.toString("base64"),
-              ownGhinNumber: secrets.login.ownGhinNumber,
+              ...(secrets.login.ownGhinNumber
+                ? { ownGhinNumber: secrets.login.ownGhinNumber }
+                : {}),
               accountType: secrets.login.accountType,
               mode: secrets.login.mode,
             },

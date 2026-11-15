@@ -299,12 +299,13 @@ export function createMcpServer(service: RosterService, principal: Principal) {
   );
   tool(
     "get_connection_status",
-    "Inspect MCP identity, provider authentication, credential-storage status, expiry, capabilities and limitations; never returns credentials.",
+    "Inspect MCP identity, provider authentication, credential-storage status, expiry, capabilities and limitations; never returns credentials. yourGhinNumber is the user's own GHIN number if they saved one at login: use it for questions like \"what's my handicap\"; if it is null, ask the user for their number.",
     empty,
     z.object({
       authenticated: z.boolean(),
       providerAuthenticated: z.boolean(),
       credentialsStored: z.boolean(),
+      yourGhinNumber: z.string().nullable(),
       sessionExpiresAt: z.iso.datetime().nullable(),
       controlledTest: z.boolean(),
       provider: z.string(),

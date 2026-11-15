@@ -101,8 +101,9 @@ export interface LoginResult {
   credentialStore: string;
 }
 
-/** Verify a login against GHIN (one sign-in plus one lookup of your own
- * number), then save it with the roster key in the credential store. */
+/** Verify a login against GHIN (a sign-in, plus a lookup of your own number
+ * when one is given), then save it with the roster key in the credential
+ * store. */
 export async function saveVerifiedLogin(options: {
   directory: string;
   login: GhinLogin;
@@ -154,7 +155,7 @@ export async function saveVerifiedLogin(options: {
   const copy = {
     username: Buffer.from(login.username),
     password: Buffer.from(login.password),
-    ownGhinNumber: login.ownGhinNumber,
+    ownGhinNumber: login.ownGhinNumber ?? "",
     accountType: login.accountType,
   };
   try {
@@ -209,10 +210,13 @@ async function login(options: Parsed) {
   );
   const username = await readPrivateCredential("GHIN username or email: ");
   const password = await readPrivateCredential("GHIN password: ");
-  const number = await readPrivateCredential("Your GHIN number: ");
+  const ownGhinNumber = (
+    await readVisibleConfirmation(
+      'Your GHIN number (optional, for "what\'s my handicap"; Enter to skip): ',
+    )
+  ).trim();
   try {
-    const ownGhinNumber = number.toString("utf8").trim();
-    if (!/^[1-9]\d{5,9}$/.test(ownGhinNumber))
+    if (ownGhinNumber && !/^[1-9]\d{5,9}$/.test(ownGhinNumber))
       throw new AppError(
         "INVALID_INPUT",
         "A GHIN number is 6 to 10 digits and does not start with 0.",
@@ -223,7 +227,7 @@ async function login(options: Parsed) {
       login: {
         username,
         password,
-        ownGhinNumber,
+        ...(ownGhinNumber ? { ownGhinNumber } : {}),
         accountType: options.accountType,
         mode: options.mode,
       },
@@ -240,7 +244,6 @@ async function login(options: Parsed) {
   } finally {
     username.fill(0);
     password.fill(0);
-    number.fill(0);
   }
 }
 
@@ -294,6 +297,7 @@ async function status(options: Parsed) {
       profile: directory,
       credentialStore: store.description,
       loggedIn: secrets?.login !== undefined,
+      ghinNumberSaved: secrets?.login?.ownGhinNumber !== undefined,
       noticeAccepted: usage.acknowledged,
       lookupsLeftToday: usage.search,
       signInsLeftToday: usage.login,

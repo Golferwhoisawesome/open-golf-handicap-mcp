@@ -370,3 +370,49 @@ test(
     }
   },
 );
+
+test("the GHIN number is optional: login verifies the sign-in alone and lookups still work", async () => {
+  const f = await profile();
+  try {
+    const { ownGhinNumber: _omit, ...withoutNumber } = login();
+    await saveVerifiedLogin({
+      directory: f.directory,
+      login: withoutNumber,
+      env: fileStore,
+    });
+    const directory = await ensureProfileDirectory(f.directory);
+    const usage = new GhinUsageRepository(
+      new ProfileStateStore(directory),
+      "offline-test",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const afterLogin = await usage.allowance();
+    assert.equal(afterLogin.login, 9, "one sign-in");
+    assert.equal(afterLogin.search, 200, "no lookup without a number");
+    const saved = await loadSecrets(new PrivateFileStore(directory));
+    assert.equal(saved?.login?.ownGhinNumber, undefined);
+    const { provider: active } = provider(directory, {
+      saved: () => ({
+        ...withoutNumber,
+        username: Buffer.from(withoutNumber.username),
+        password: Buffer.from(withoutNumber.password),
+      }),
+    });
+    try {
+      const state = await active.getConnectionState(owner);
+      assert.equal(state.ownGhinNumber, null);
+      const rows = await active.getMany(owner, ["900000005"]);
+      assert.equal(rows[0]!.ok && rows[0]!.data.handicapIndex, -0.9);
+    } finally {
+      await active.close();
+    }
+    const { provider: withNumber } = provider(directory);
+    assert.equal(
+      (await withNumber.getConnectionState(owner)).ownGhinNumber,
+      "900000001",
+    );
+    await withNumber.close();
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});

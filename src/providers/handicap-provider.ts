@@ -14,6 +14,8 @@ export interface ProviderConnectionState {
   authenticated: boolean;
   connected: boolean;
   credentialsStored: boolean;
+  /** The signed-in golfer's own number when they chose to save it. */
+  ownGhinNumber?: string | null;
   expiresAt: string | null;
   controlledTest?: boolean;
   limitations: string[];

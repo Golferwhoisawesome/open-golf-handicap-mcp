@@ -36,7 +36,7 @@ const fingerprint = (login: GhinLogin) =>
     .update("\0")
     .update(login.password)
     .update("\0")
-    .update(login.ownGhinNumber)
+    .update(login.ownGhinNumber ?? "")
     .digest("hex");
 
 function wipe(login: GhinLogin | undefined) {
@@ -134,7 +134,7 @@ export class OnDemandGhinProvider implements HandicapProvider {
       const copy = {
         username: Buffer.from(login.username),
         password: Buffer.from(login.password),
-        ownGhinNumber: login.ownGhinNumber,
+        ownGhinNumber: login.ownGhinNumber ?? "",
         accountType: login.accountType,
       };
       try {
@@ -205,6 +205,7 @@ export class OnDemandGhinProvider implements HandicapProvider {
     this.#owner(context);
     const login = await this.options.loadLogin().catch(() => undefined);
     const stored = login !== undefined && login.mode === this.options.mode;
+    const ownGhinNumber = stored ? (login?.ownGhinNumber ?? null) : null;
     wipe(login);
     const state = await this.options.usage.allowance();
     const status = this.#session?.status();
@@ -213,6 +214,7 @@ export class OnDemandGhinProvider implements HandicapProvider {
       authenticated: signedIn,
       connected: !this.#disconnected && stored && !state.forbidden,
       credentialsStored: stored,
+      ownGhinNumber,
       expiresAt:
         signedIn && status?.expiresAt
           ? new Date(status.expiresAt).toISOString()

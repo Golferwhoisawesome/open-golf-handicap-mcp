@@ -40,6 +40,7 @@ export interface SdkUsageEvent {
 export interface SdkCredentials {
   username: Buffer;
   password: Buffer;
+  /** The user's own GHIN number, or "" when none was saved. */
   ownGhinNumber: string;
   accountType: "golfer" | "api";
 }
@@ -177,14 +178,21 @@ export class SpicyGolfSdkSession {
       credentials.username.length > 254 ||
       credentials.password.length < 1 ||
       credentials.password.length > 1024 ||
-      !/^[1-9]\d{5,9}$/.test(credentials.ownGhinNumber) ||
+      typeof credentials.ownGhinNumber !== "string" ||
+      !(
+        credentials.ownGhinNumber === "" ||
+        /^[1-9]\d{5,9}$/.test(credentials.ownGhinNumber)
+      ) ||
       !["golfer", "api"].includes(credentials.accountType)
     )
       throw new AppError("INVALID_INPUT", "Invalid private credentials.");
-    if (this.#options.controlledTest && credentials.accountType !== "golfer")
+    if (
+      this.#options.controlledTest &&
+      (credentials.accountType !== "golfer" || credentials.ownGhinNumber === "")
+    )
       throw new AppError(
         "INVALID_INPUT",
-        "Controlled tests require a golfer account.",
+        "Controlled tests require a golfer account and its number.",
       );
     this.#ownNumber = credentials.ownGhinNumber;
     if (
@@ -193,7 +201,10 @@ export class SpicyGolfSdkSession {
         credentials.username.toString("utf8"),
       ) ||
         !isSyntheticSdkPassword(credentials.password) ||
-        !/^90000000[1-5]$/.test(credentials.ownGhinNumber))
+        !(
+          credentials.ownGhinNumber === "" ||
+          /^90000000[1-5]$/.test(credentials.ownGhinNumber)
+        ))
     )
       throw new AppError(
         "INVALID_INPUT",

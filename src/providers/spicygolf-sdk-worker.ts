@@ -408,8 +408,13 @@ try {
       typeof workerData.controlledTest !== "boolean") ||
     (controlledTest &&
       (maxSessionMs > CONTROLLED_TEST_MAX_SESSION_MS ||
-        credentials.accountType !== "golfer")) ||
-    !/^[1-9]\d{5,9}$/.test(credentials.ownGhinNumber) ||
+        credentials.accountType !== "golfer" ||
+        credentials.ownGhinNumber === "")) ||
+    // An empty number means the user chose not to save one.
+    !(
+      credentials.ownGhinNumber === "" ||
+      /^[1-9]\d{5,9}$/.test(credentials.ownGhinNumber)
+    ) ||
     !["golfer", "api"].includes(credentials.accountType)
   )
     throw new Error("Invalid session");
@@ -432,7 +437,10 @@ try {
     (!fixtureScenarios.includes(workerData.fixtureScenario) ||
       !/^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.invalid$/.test(username) ||
       !isSyntheticSdkPassword(passwordBytes) ||
-      !/^90000000[1-5]$/.test(credentials.ownGhinNumber))
+      !(
+        credentials.ownGhinNumber === "" ||
+        /^90000000[1-5]$/.test(credentials.ownGhinNumber)
+      ))
   )
     throw new Error("Offline fixture credentials only");
   if (
@@ -571,7 +579,32 @@ port.on(
             result = { ok: false, error: startupError };
           } else if (!client)
             result = { ok: false, error: { code: "NETWORK_ERROR" } };
-          else if (message.operation === "connect" && !connected) {
+          else if (
+            message.operation === "connect" &&
+            !connected &&
+            credentials.ownGhinNumber === ""
+          ) {
+            // No saved number: verify the sign-in itself (installation and
+            // login only, no lookup). The pinned SDK exposes token
+            // acquisition on its request client; tests cover this path.
+            const signedIn = await (
+              client as unknown as {
+                httpClient: {
+                  getAccessToken(): Promise<{
+                    isErr(): boolean;
+                    error?: unknown;
+                  }>;
+                };
+              }
+            ).httpClient.getAccessToken();
+            guard();
+            if (signedIn.isErr())
+              result = { ok: false, error: safeSdkError(signedIn.error) };
+            else {
+              connected = true;
+              result = { ok: true, value: { expiresAt } };
+            }
+          } else if (message.operation === "connect" && !connected) {
             const verified = await client.golfers.getMany(
               [Number(credentials.ownGhinNumber)],
               { status: null },
