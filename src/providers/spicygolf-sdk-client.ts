@@ -167,7 +167,11 @@ export class SpicyGolfSdkSession {
     this.#allowance = options.allowance ? { ...options.allowance } : undefined;
     this.#onUsage = options.onUsage;
   }
-  async connect(credentials: SdkCredentials): Promise<{ expiresAt: number }> {
+  /** Resolves with the session expiry and, for golfer accounts, the GHIN
+   * number GHIN reported for the signed-in account. */
+  async connect(
+    credentials: SdkCredentials,
+  ): Promise<{ expiresAt: number; ownGhinNumber?: string }> {
     if (this.#options.mode === "ghin") assertLiveAccessEnabled();
     if (this.#worker || this.#closed)
       throw new AppError("CONFLICT", "Create a new SDK session.");
@@ -297,7 +301,14 @@ export class SpicyGolfSdkSession {
         },
         Math.max(0, expiry - Date.now()),
       );
-      return { expiresAt: expiry };
+      const reported = (result.value as { ownGhinNumber?: unknown })
+        ?.ownGhinNumber;
+      return {
+        expiresAt: expiry,
+        ...(typeof reported === "string" && /^[1-9]\d{5,9}$/.test(reported)
+          ? { ownGhinNumber: reported }
+          : {}),
+      };
     } catch (error) {
       await this.close();
       throw error instanceof AppError ? error : unavailable();

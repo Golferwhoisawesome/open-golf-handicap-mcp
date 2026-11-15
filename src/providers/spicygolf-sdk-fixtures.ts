@@ -118,7 +118,12 @@ export function createSdkFixtureFetch(
         ].join(".");
         return url.pathname.endsWith("/users/login.json")
           ? json({ user: { id: "synthetic-user" }, token })
-          : json({ golfer_user: { golfer_user_token: token } });
+          : json({
+              golfer_user: {
+                golfer_user_token: token,
+                golfer_id: Number(ownGhinNumber || "900000001"),
+              },
+            });
       }
       if (
         url.pathname !== "/api/v1/golfers/search.json" ||

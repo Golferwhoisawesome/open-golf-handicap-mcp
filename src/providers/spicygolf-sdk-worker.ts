@@ -79,6 +79,21 @@ const fixture =
         () => exactPassword,
       )
     : undefined;
+// The golfer sign-in response names the account's own GHIN number
+// (golfer_user.golfer_id). Kept only to report back; never logged.
+let signedInGhinNumber: string | undefined;
+function noteSignedInGolfer(payload: unknown) {
+  const user = (payload as { golfer_user?: { golfer_id?: unknown } })
+    ?.golfer_user;
+  const id = user?.golfer_id;
+  const text =
+    typeof id === "number" && Number.isSafeInteger(id)
+      ? String(id)
+      : typeof id === "string"
+        ? id
+        : "";
+  if (/^[1-9]\d{5,9}$/.test(text)) signedInGhinNumber = text;
+}
 let stopped = false,
   forbidden = false,
   invalidToken = false,
@@ -183,7 +198,10 @@ function validateJsonShape(value: unknown) {
     }
   }
 }
-async function boundedResponse(response: Response): Promise<Response> {
+async function boundedResponse(
+  response: Response,
+  inspect?: (payload: unknown) => void,
+): Promise<Response> {
   const maximum = 512 * 1024,
     declared = response.headers.get("content-length");
   if (declared && Number(declared) > maximum) {
@@ -216,6 +234,7 @@ async function boundedResponse(response: Response): Promise<Response> {
     halt("invalid_response");
     return json({ error: "Invalid bounded upstream response" }, 502);
   }
+  inspect?.(payload);
   if (
     policy &&
     typeof payload === "object" &&
@@ -374,7 +393,10 @@ globalThis.fetch = async (
       }
       let bounded: Response;
       try {
-        bounded = await boundedResponse(response);
+        bounded = await boundedResponse(
+          response,
+          login && response.ok ? noteSignedInGolfer : undefined,
+        );
       } catch {
         halt("invalid_response");
         throw new Error("Invalid bounded upstream response");
@@ -602,7 +624,15 @@ port.on(
               result = { ok: false, error: safeSdkError(signedIn.error) };
             else {
               connected = true;
-              result = { ok: true, value: { expiresAt } };
+              result = {
+                ok: true,
+                value: {
+                  expiresAt,
+                  ...(signedInGhinNumber
+                    ? { ownGhinNumber: signedInGhinNumber }
+                    : {}),
+                },
+              };
             }
           } else if (message.operation === "connect" && !connected) {
             const verified = await client.golfers.getMany(
@@ -624,7 +654,15 @@ port.on(
               };
             else {
               connected = true;
-              result = { ok: true, value: { expiresAt } };
+              result = {
+                ok: true,
+                value: {
+                  expiresAt,
+                  ...(signedInGhinNumber
+                    ? { ownGhinNumber: signedInGhinNumber }
+                    : {}),
+                },
+              };
             }
           } else if (message.operation === "getMany" && connected) {
             const numbers = message.args?.numbers,

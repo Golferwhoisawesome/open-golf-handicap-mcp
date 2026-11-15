@@ -99,6 +99,7 @@ export interface LoginResult {
   loggedIn: true;
   profile: string;
   credentialStore: string;
+  ghinNumber?: string;
 }
 
 /** Verify a login against GHIN (a sign-in, plus a lookup of your own number
@@ -158,8 +159,9 @@ export async function saveVerifiedLogin(options: {
     ownGhinNumber: login.ownGhinNumber ?? "",
     accountType: login.accountType,
   };
+  let reported: string | undefined;
   try {
-    await session.connect(copy);
+    reported = (await session.connect(copy)).ownGhinNumber;
   } finally {
     copy.username.fill(0);
     copy.password.fill(0);
@@ -172,9 +174,12 @@ export async function saveVerifiedLogin(options: {
     existing = undefined; // An unreadable item is replaced by a fresh one.
   }
   try {
+    // GHIN's sign-in response names the account's own number; keep it so
+    // the assistant can answer "what's my handicap" without asking.
+    const ownGhinNumber = login.ownGhinNumber ?? reported;
     await saveSecrets(store, {
       rosterKey: existing?.rosterKey ?? newRosterKey(),
-      login,
+      login: { ...login, ...(ownGhinNumber ? { ownGhinNumber } : {}) },
     });
   } finally {
     wipeSecrets(existing);
@@ -184,6 +189,9 @@ export async function saveVerifiedLogin(options: {
     loggedIn: true,
     profile: directory,
     credentialStore: store.description,
+    ...((login.ownGhinNumber ?? reported)
+      ? { ghinNumber: (login.ownGhinNumber ?? reported)! }
+      : {}),
   };
 }
 
@@ -210,30 +218,19 @@ async function login(options: Parsed) {
   );
   const username = await readPrivateCredential("GHIN username or email: ");
   const password = await readPrivateCredential("GHIN password: ");
-  const ownGhinNumber = (
-    await readVisibleConfirmation(
-      'Your GHIN number (optional, for "what\'s my handicap"; Enter to skip): ',
-    )
-  ).trim();
   try {
-    if (ownGhinNumber && !/^[1-9]\d{5,9}$/.test(ownGhinNumber))
-      throw new AppError(
-        "INVALID_INPUT",
-        "A GHIN number is 6 to 10 digits and does not start with 0.",
-      );
     process.stdout.write("Checking with GHIN…\n");
     const result = await saveVerifiedLogin({
       directory,
       login: {
         username,
         password,
-        ...(ownGhinNumber ? { ownGhinNumber } : {}),
         accountType: options.accountType,
         mode: options.mode,
       },
     });
     process.stdout.write(
-      `\nSigned in. Your login is saved in your ${result.credentialStore}.\n` +
+      `\nSigned in${result.ghinNumber ? ` as GHIN ${result.ghinNumber}` : ""}. Your login is saved in your ${result.credentialStore}.\n` +
         "Next, add the server to your AI app (see the README), for example:\n" +
         "  claude mcp add golf-handicap -- npx -y open-golf-handicap-mcp" +
         (options.directory === resolve(defaultProfileDirectory())

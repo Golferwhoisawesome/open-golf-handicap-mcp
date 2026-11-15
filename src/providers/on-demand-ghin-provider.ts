@@ -55,6 +55,8 @@ export class OnDemandGhinProvider implements HandicapProvider {
   #disconnected = false;
   #rejectedLogin?: string;
   #lastError?: AppError;
+  /** The number GHIN reported at sign-in, when the saved login lacks one. */
+  #reportedNumber?: string;
   constructor(private readonly options: OnDemandGhinOptions) {
     if (!options.ownerSubject || options.ownerSubject.length > 500)
       throw new AppError("INVALID_INPUT", "Invalid connection owner.");
@@ -138,7 +140,9 @@ export class OnDemandGhinProvider implements HandicapProvider {
         accountType: login.accountType,
       };
       try {
-        await session.connect(copy);
+        const connected = await session.connect(copy);
+        if (connected.ownGhinNumber)
+          this.#reportedNumber = connected.ownGhinNumber;
       } catch (error) {
         await session.close();
         if (
@@ -205,7 +209,9 @@ export class OnDemandGhinProvider implements HandicapProvider {
     this.#owner(context);
     const login = await this.options.loadLogin().catch(() => undefined);
     const stored = login !== undefined && login.mode === this.options.mode;
-    const ownGhinNumber = stored ? (login?.ownGhinNumber ?? null) : null;
+    const ownGhinNumber = stored
+      ? (login?.ownGhinNumber ?? this.#reportedNumber ?? null)
+      : null;
     wipe(login);
     const state = await this.options.usage.allowance();
     const status = this.#session?.status();

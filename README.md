@@ -28,7 +28,7 @@ Your GHIN password stays on your computer. It's typed into a private terminal wi
 - macOS, Linux or Windows 10/11
 - [Node.js](https://nodejs.org) 22 or later
 - An MCP client that runs local servers, such as Claude Desktop, Claude Code, Cursor or Codex
-- Your own GHIN account (username/email and password) and your GHIN number
+- Your own GHIN account (username/email and password)
 
 ## Setup (about two minutes)
 
@@ -40,7 +40,7 @@ Open a terminal (Terminal on macOS, PowerShell or Windows Terminal on Windows) a
 npx -y -p open-golf-handicap-mcp open-golf-handicap-setup login
 ```
 
-The first time, it shows the notice above and asks you to type `I UNDERSTAND`. Then it asks for your GHIN username, GHIN password and GHIN number (nothing appears as you type them). It checks them with GHIN once, then saves them in your computer's own password store:
+The first time, it shows the notice above and asks you to type `I UNDERSTAND`. Then it asks for your GHIN username and password (nothing appears as you type them). Your GHIN number comes from GHIN's sign-in, so you don't need to enter it. It checks them with GHIN once, then saves them in your computer's own password store:
 
 | System  | Where your login is kept                                                                            |
 | ------- | --------------------------------------------------------------------------------------------------- |
@@ -144,7 +144,7 @@ Without a saved login, the server runs in demo mode with synthetic golfers `9000
 | Assistant says GHIN sign-in is needed           | Run the `login` command in a terminal, then restart your AI app                                                                                          |
 | Assistant only shows demo golfers               | No login was found when the AI app started. Run `login`, then restart the AI app                                                                         |
 | `PRIVATE_INPUT_REQUIRED`                        | Run `login` in a real terminal window (Terminal, iTerm, Windows Terminal), not inside an AI tool or an IDE output pane                                   |
-| Sign-in fails                                   | Check your username and password in the GHIN app first. The GHIN number must be your own                                                                 |
+| Sign-in fails                                   | Check your username and password in the GHIN app first.                                                                                                  |
 | `RATE_LIMITED`                                  | You reached this tool's daily limit, or GHIN asked it to slow down. `status` shows when it resets                                                        |
 | macOS asks to allow access to the Keychain item | Click **Always Allow** so the server can read your saved login                                                                                           |
 | Client can't find `npx`                         | Desktop apps may not see your shell's PATH (common with nvm). Use the full path from `which npx` (macOS/Linux) or `where npx` (Windows) as the `command` |

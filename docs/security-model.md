@@ -12,7 +12,7 @@ AI client ──stdio──▶ MCP server process ──────────
                      └─ isolated SDK worker thread ──HTTPS──▶ GHIN
 ```
 
-- **`login`** runs in your terminal. It shows the unofficial-use notice once, reads your GHIN username, password and number from hidden prompts, verifies them with one GHIN sign-in and one lookup of your own number, then saves them.
+- **`login`** runs in your terminal. It shows the unofficial-use notice once, reads your GHIN username and password from hidden prompts, verifies them with one GHIN sign-in, and saves them together with the GHIN number that the sign-in response reports for your account.
 - **Saved data** is a single item in your operating system's password store. It contains the GHIN login and the random 256-bit key that encrypts your roster.
   - macOS: login Keychain, written through `/usr/bin/security` with the value passed on standard input, never as an argument.
   - Windows: encrypted with the Data Protection API for your Windows account, stored in the profile folder.

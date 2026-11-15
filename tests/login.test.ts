@@ -416,3 +416,25 @@ test("the GHIN number is optional: login verifies the sign-in alone and lookups 
     await rm(f.root, { recursive: true, force: true });
   }
 });
+
+test("a golfer login saves the GHIN number reported by GHIN's sign-in, without asking", async () => {
+  const f = await profile();
+  try {
+    const { ownGhinNumber: _omit, ...withoutNumber } = login();
+    const result = await saveVerifiedLogin({
+      directory: f.directory,
+      login: { ...withoutNumber, accountType: "golfer" },
+      env: fileStore,
+    });
+    assert.equal(result.ghinNumber, "900000001");
+    const saved = await loadSecrets(new PrivateFileStore(f.directory));
+    assert.equal(saved?.login?.ownGhinNumber, "900000001");
+    const usage = await new GhinUsageRepository(
+      new ProfileStateStore(await ensureProfileDirectory(f.directory)),
+      "offline-test",
+    ).allowance();
+    assert.equal(usage.search, 200, "sign-in alone; no lookup");
+  } finally {
+    await rm(f.root, { recursive: true, force: true });
+  }
+});
