@@ -166,7 +166,7 @@ test("provider signs in only when a lookup needs it and reuses the session", asy
         [8.7, -0.9],
       );
       await active.getMany(owner, ["900000003"]);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await usage.settled();
       const used = await usage.allowance();
       assert.equal(used.login, 9, "exactly one sign-in");
       assert.equal(used.search, 200 - 3, "validation plus two lookups");
@@ -200,7 +200,7 @@ test("a rejected login is not retried until the saved login changes", async () =
         active.getMany(owner, ["900000002"]),
         code("AUTH_REQUIRED"),
       );
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await usage.settled();
       const afterFirst = (await usage.allowance()).login;
       await assert.rejects(
         active.getMany(owner, ["900000002"]),
@@ -212,7 +212,7 @@ test("a rejected login is not retried until the saved login changes", async () =
         active.getMany(owner, ["900000002"]),
         code("AUTH_REQUIRED"),
       );
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await usage.settled();
       assert.equal(
         (await usage.allowance()).login,
         afterFirst - 1,
@@ -469,7 +469,7 @@ test("name search returns identity, club, state and index only", async () => {
       const text = JSON.stringify(matches);
       assert.equal(text.includes("555-0100"), false, "no phone numbers");
       assert.equal(text.includes("example.invalid"), false, "no emails");
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await usage.settled();
       // Validation lookup at sign-in plus one search, both counted.
       assert.equal((await usage.allowance()).search, 198);
     } finally {

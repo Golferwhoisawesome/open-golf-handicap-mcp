@@ -110,6 +110,14 @@ export class GhinUsageRepository {
     this.#writes = run.catch(() => undefined);
     return run;
   }
+  /** Resolves once every write queued so far has finished. */
+  async settled(): Promise<void> {
+    let pending: Promise<void>;
+    do {
+      pending = this.#writes;
+      await pending;
+    } while (pending !== this.#writes);
+  }
   async allowance(): Promise<
     UsageAllowance & { forbidden: boolean; acknowledged: boolean }
   > {
