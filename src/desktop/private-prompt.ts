@@ -6,7 +6,9 @@ export async function readHiddenPassphrase(prompt: string): Promise<Buffer> {
   return readTerminalLine({
     prompt,
     rejectByte: (byte) =>
-      byte < 32 || byte > 126 ? new DesktopError("INVALID_SECRET") : undefined,
+      byte < 32 || byte > 126
+        ? new DesktopError("PASSPHRASE_CHARACTER")
+        : undefined,
   });
 }
 

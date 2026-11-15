@@ -8,7 +8,9 @@ export type DesktopErrorCode =
   | "PRIVATE_INPUT_REQUIRED"
   | "INPUT_CANCELLED"
   | "INVALID_SECRET"
-  | "PASSPHRASE_MISMATCH";
+  | "PASSPHRASE_MISMATCH"
+  | "PASSPHRASE_TOO_SHORT"
+  | "PASSPHRASE_CHARACTER";
 const messages: Record<DesktopErrorCode, string> = {
   PROFILE_MISSING:
     "The private desktop profile does not exist. Run setup init first.",
@@ -26,6 +28,10 @@ const messages: Record<DesktopErrorCode, string> = {
   INPUT_CANCELLED: "Private input was cancelled.",
   INVALID_SECRET:
     "The private input is invalid. Vault passphrases must contain 12 to 1024 printable ASCII characters.",
+  PASSPHRASE_TOO_SHORT:
+    "The vault passphrase must be at least 12 characters. Nothing was created; try a longer one (for example, four short words).",
+  PASSPHRASE_CHARACTER:
+    "Use only standard keyboard characters (letters, digits, spaces and symbols) in the vault passphrase, and type it rather than pasting it.",
   PASSPHRASE_MISMATCH:
     "The two passphrases did not match. Nothing was created; try again.",
 };

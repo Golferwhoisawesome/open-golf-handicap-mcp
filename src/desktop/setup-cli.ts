@@ -54,6 +54,8 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
   );
   try {
     if (command === "init") {
+      if (passphrase.length < 12)
+        throw new DesktopError("PASSPHRASE_TOO_SHORT");
       const confirmation = await readHiddenPassphrase(
         "Repeat vault passphrase: ",
       );
