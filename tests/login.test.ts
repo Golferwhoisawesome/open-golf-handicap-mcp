@@ -508,6 +508,14 @@ test(
         });
         assert.equal(found.ok, true);
         assert.equal(found.data.matches[0].ghinNumber, "900000001");
+        const byLast = await call(live, "search_golfers", {
+          lastName: "SDK",
+          state: "NC",
+        });
+        assert.equal(byLast.ok, true, "a last name alone is enough");
+        assert.equal(byLast.data.matches.length, 5);
+        const empty = await call(live, "search_golfers", { state: "NC" });
+        assert.equal(empty.ok, false, "some name is required");
         const bad = await live.callTool({
           name: "search_golfers",
           arguments: { firstName: "<script>" },

@@ -41,7 +41,7 @@ export interface GolferMatch {
   effectiveDate?: string;
 }
 export interface NameQuery {
-  firstName: string;
+  firstName?: string;
   lastName?: string;
   state?: string;
 }

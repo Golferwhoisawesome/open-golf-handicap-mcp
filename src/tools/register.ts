@@ -121,13 +121,14 @@ export function createMcpServer(service: RosterService, principal: Principal) {
   );
   tool(
     "search_golfers",
-    "Find golfers by name to get their GHIN number and current index. Needs a first name; add a last name and a 2-letter US state code (e.g. NC) to narrow it. Returns up to 25 active US golfers. Several people often share a name: show the matches (name, club, state) and let the user pick before saving anyone to the roster.",
+    "Find golfers by name to get their GHIN number and current index. Give a last name, a first name, or both; add a 2-letter US state code (e.g. VA) to narrow it. Returns up to 25 active US golfers. Several people often share a name: show the matches (name, club, state) and let the user pick before saving anyone to the roster.",
     z
       .object({
         firstName: z
           .string()
           .trim()
-          .regex(/^[\p{L}][\p{L}' .-]{0,39}$/u),
+          .regex(/^[\p{L}][\p{L}' .-]{0,39}$/u)
+          .optional(),
         lastName: z
           .string()
           .trim()

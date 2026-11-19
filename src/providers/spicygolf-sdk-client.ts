@@ -413,7 +413,7 @@ export class SpicyGolfSdkSession {
   }
   /** GHIN global search by name (active US golfers, up to 25 rows). */
   async searchByName(query: {
-    firstName: string;
+    firstName?: string;
     lastName?: string;
     state?: string;
   }): Promise<SpicyGolfResult> {

@@ -196,9 +196,14 @@ export class RosterService {
   }
   async searchGolfers(
     p: Principal,
-    query: { firstName: string; lastName?: string; state?: string },
+    query: { firstName?: string; lastName?: string; state?: string },
   ) {
     this.connected(p);
+    if (!query.firstName && !query.lastName)
+      throw new AppError(
+        "INVALID_INPUT",
+        "Give a last name, a first name, or both.",
+      );
     const provider = this.lookups.provider;
     if (!provider.searchByName)
       throw new AppError("UNSUPPORTED", "Name search is unavailable.");

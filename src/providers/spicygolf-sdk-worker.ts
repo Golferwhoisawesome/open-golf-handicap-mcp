@@ -681,8 +681,9 @@ port.on(
               lastName = query?.lastName,
               state = query?.state;
             if (
-              typeof firstName !== "string" ||
-              !name.test(firstName) ||
+              (firstName === undefined && lastName === undefined) ||
+              (firstName !== undefined &&
+                (typeof firstName !== "string" || !name.test(firstName))) ||
               (lastName !== undefined &&
                 (typeof lastName !== "string" || !name.test(lastName))) ||
               (state !== undefined &&
@@ -692,7 +693,7 @@ port.on(
             // GHIN's number search rejects name queries; the global search
             // needs a country scope. Active US golfers, one page of 25.
             const response = await client.golfers.globalSearch({
-              first_name: firstName,
+              ...(firstName ? { first_name: firstName } : {}),
               ...(lastName ? { last_name: lastName } : {}),
               ...(state ? { state } : {}),
               country: "USA",
