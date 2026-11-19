@@ -160,51 +160,6 @@ export function createMcpServer(service: RosterService, principal: Principal) {
     (a) => service.searchGolfers(principal, a),
   );
   tool(
-    "get_handicap_history",
-    "Handicap history. Demo mode only: not available with a GHIN login (fails with UNSUPPORTED). Do not offer it to GHIN users.",
-    z
-      .object({
-        ghinNumber: ghinSchema,
-        limit: z.number().int().min(1).max(100).default(20),
-      })
-      .strict(),
-    z.object({
-      ghinNumber: ghinSchema,
-      entries: z.array(
-        z.object({ effectiveDate: z.string(), handicapIndex: z.number() }),
-      ),
-      source: z.string(),
-      synthetic: z.boolean(),
-    }),
-    false,
-    (a) => service.history(principal, a.ghinNumber, a.limit),
-  );
-  tool(
-    "get_recent_scores",
-    "Recent scores. Demo mode only: not available with a GHIN login (fails with UNSUPPORTED). Do not offer it to GHIN users.",
-    z
-      .object({
-        ghinNumber: ghinSchema,
-        limit: z.number().int().min(1).max(100).default(20),
-      })
-      .strict(),
-    z.object({
-      ghinNumber: ghinSchema,
-      entries: z.array(
-        z.object({
-          playedOn: z.string(),
-          grossScore: z.number(),
-          holes: z.union([z.literal(9), z.literal(18)]),
-          courseName: z.string().optional(),
-        }),
-      ),
-      source: z.string(),
-      synthetic: z.boolean(),
-    }),
-    false,
-    (a) => service.scores(principal, a.ghinNumber, a.limit),
-  );
-  tool(
     "get_course_handicap",
     "Educational local Course Handicap calculation for supplied 9- or 18-hole ratings. Use negative numbers for plus indexes. Does not apply a Playing Handicap allowance.",
     courseInputSchema,

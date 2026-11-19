@@ -17,8 +17,6 @@ const principal = {
 const required = [
   "get_golfer_handicap",
   "get_multiple_handicaps",
-  "get_handicap_history",
-  "get_recent_scores",
   "get_course_handicap",
   "save_golfer",
   "save_multiple_golfers",
@@ -302,7 +300,7 @@ test("stdio SDK handshake and tool call work with synthetic-only child process",
     client = new Client({ name: "stdio-test", version: "1" });
   await client.connect(transport);
   try {
-    assert.equal((await client.listTools()).tools.length, 17);
+    assert.equal((await client.listTools()).tools.length, 15);
     const response = await client.callTool({
       name: "get_connection_status",
       arguments: {},

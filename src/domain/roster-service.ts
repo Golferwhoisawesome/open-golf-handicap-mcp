@@ -224,36 +224,6 @@ export class RosterService {
       );
     return state.ownGhinNumber;
   }
-  async history(p: Principal, number: string, limit: number) {
-    this.connected(p);
-    if (!this.lookups.provider.capabilities.history)
-      throw new AppError("UNSUPPORTED", "History unavailable");
-    return {
-      ghinNumber: number,
-      entries: await this.lookups.provider.getHistory(
-        { subject: p.subject },
-        number,
-        limit,
-      ),
-      source: this.lookups.provider.id,
-      synthetic: !this.lookups.provider.capabilities.live,
-    };
-  }
-  async scores(p: Principal, number: string, limit: number) {
-    this.connected(p);
-    if (!this.lookups.provider.capabilities.scores)
-      throw new AppError("UNSUPPORTED", "Scores unavailable");
-    return {
-      ghinNumber: number,
-      entries: await this.lookups.provider.getScores(
-        { subject: p.subject },
-        number,
-        limit,
-      ),
-      source: this.lookups.provider.id,
-      synthetic: !this.lookups.provider.capabilities.live,
-    };
-  }
   async refresh(p: Principal, ids?: string[], force = false) {
     this.authorize(p, true);
     this.connected(p);

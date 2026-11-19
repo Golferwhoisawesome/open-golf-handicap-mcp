@@ -98,19 +98,18 @@ Your roster and settings live in `~/.open-golf-handicap` (`%USERPROFILE%\.open-g
 
 ## Tools
 
-| Tool                                                                | What it does                                                                    |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `get_golfer_handicap`                                               | One golfer's Handicap Index, with its effective date and when it was retrieved  |
-| `search_golfers`                                                    | Find golfers by first/last name and US state to get their GHIN number           |
-| `get_multiple_handicaps`                                            | Up to 100 golfers at once; each one succeeds or fails on its own                |
-| `get_course_handicap`                                               | Course handicap from an index plus course rating, slope and par (9 or 18 holes) |
-| `save_golfer` / `save_multiple_golfers`                             | Add golfers to your roster (bulk import asks you to confirm first)              |
-| `get_saved_golfers` / `update_saved_golfer` / `remove_saved_golfer` | Manage your roster                                                              |
-| `refresh_saved_handicaps`                                           | Re-check everyone (or selected golfers) and show what changed                   |
-| `get_handicap_changes`                                              | Changes this tool has observed over a period                                    |
-| `export_golfer_roster` / `delete_golfer_roster`                     | Export your roster as JSON / delete it (asks you to confirm)                    |
-| `get_connection_status` / `disconnect_provider`                     | Connection details and limits / end the GHIN session                            |
-| `get_handicap_history` / `get_recent_scores`                        | Not available with GHIN (demo data only)                                        |
+| Tool                                                                | What it does                                                                       |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `get_golfer_handicap`                                               | One golfer's Handicap Index, with its effective date and when it was retrieved     |
+| `search_golfers`                                                    | Find golfers by last name, first name or both (plus US state) to get a GHIN number |
+| `get_multiple_handicaps`                                            | Up to 100 golfers at once; each one succeeds or fails on its own                   |
+| `get_course_handicap`                                               | Course handicap from an index plus course rating, slope and par (9 or 18 holes)    |
+| `save_golfer` / `save_multiple_golfers`                             | Add golfers to your roster (bulk import asks you to confirm first)                 |
+| `get_saved_golfers` / `update_saved_golfer` / `remove_saved_golfer` | Manage your roster                                                                 |
+| `refresh_saved_handicaps`                                           | Re-check everyone (or selected golfers) and show what changed                      |
+| `get_handicap_changes`                                              | Changes this tool has observed over a period                                       |
+| `export_golfer_roster` / `delete_golfer_roster`                     | Export your roster as JSON / delete it (asks you to confirm)                       |
+| `get_connection_status` / `disconnect_provider`                     | Connection details and limits / end the GHIN session                               |
 
 Plus indexes are shown with a `+` (for example `+0.9`). A missing value is reported as unavailable, never as zero.
 

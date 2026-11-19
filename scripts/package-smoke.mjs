@@ -243,7 +243,7 @@ require("node:dgram").createSocket = deny;
   client = new Client({ name: "installed-package-smoke", version: "1" });
   await client.connect(transport, { timeout: 15_000 });
   const tools = (await client.listTools()).tools;
-  assert.equal(tools.length, 17);
+  assert.equal(tools.length, 15);
   for (const tool of tools) {
     assert(tool.inputSchema);
     assert(tool.outputSchema);
