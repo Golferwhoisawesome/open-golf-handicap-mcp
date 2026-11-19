@@ -22,6 +22,17 @@ USGA, GHIN and Handicap Index are trademarks of the United States Golf Associati
 - "Refresh everyone on my roster and tell me who changed"
 - "What's Alex's course handicap at a 71.4 / 131 course, par 72?"
 
+It works alongside other golf tools you've connected to your AI app. The assistant can look up handicaps here and use them with your other tools in the same conversation (for example, to set up a round). This server never contacts other tools itself.
+
+## Works with
+
+| AI app                                           | Status                                                                                                                    |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Claude Desktop, Claude Code                      | Supported                                                                                                                 |
+| OpenAI Codex (CLI and IDE extension)             | Supported                                                                                                                 |
+| Cursor and other apps that run local MCP servers | Supported                                                                                                                 |
+| ChatGPT, Grok, Meta Muse                         | Not yet. As of this release, these connect only to hosted (remote) MCP servers, and this server runs on your own computer |
+
 Your GHIN password stays on your computer. It's typed into a private terminal window, never into the AI chat, and the AI never sees it.
 
 ## Requirements
