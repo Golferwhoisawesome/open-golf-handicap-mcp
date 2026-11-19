@@ -120,13 +120,24 @@ export class LocalRosterStorage implements RosterStorageProvider {
           0o600,
         );
       } catch (error) {
-        if (codeOf(error) !== "EEXIST") throw storageError();
-        try {
-          this.validateFile(await lstat(lockPath));
-        } catch (inspectionError) {
-          if (codeOf(inspectionError) === "ENOENT") continue;
-          throw storageError();
-        }
+        const code = codeOf(error);
+        // Windows reports a lock file that another process is still
+        // deleting as EPERM/EACCES/EBUSY; that is contention, not damage.
+        const pendingDelete =
+          isWindows && ["EPERM", "EACCES", "EBUSY"].includes(code ?? "");
+        if (code !== "EEXIST" && !pendingDelete) throw storageError();
+        if (!pendingDelete)
+          try {
+            this.validateFile(await lstat(lockPath));
+          } catch (inspectionError) {
+            const inspected = codeOf(inspectionError);
+            if (inspected === "ENOENT") continue;
+            if (
+              !isWindows ||
+              !["EPERM", "EACCES", "EBUSY"].includes(inspected ?? "")
+            )
+              throw storageError();
+          }
         if (Date.now() >= deadline)
           throw new AppError("CONFLICT", "Storage is busy; retry later.");
         await delay(20);
